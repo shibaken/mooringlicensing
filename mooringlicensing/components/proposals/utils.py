@@ -572,15 +572,15 @@ def submit_vessel_data(instance, request, vessel_data):
         if type(approval) == AuthorisedUserPermit and approval.status in ['current', 'suspended']:
             approvals_aup_sus.append(approval)
     # apply rules
-    if (type(instance.child_obj) == WaitingListApplication and proposals_wla or approvals_wla or
-            proposals_mla or approvals_ml_sus):
+    if (type(instance.child_obj) == WaitingListApplication and (proposals_wla or approvals_wla or
+            proposals_mla or approvals_ml_sus)):
         association_fail = True
-    elif (type(instance.child_obj) == AnnualAdmissionApplication and proposals_aaa or approvals_aap or
-            proposals_aua or approvals_aup_sus or proposals_mla or approvals_ml_sus):
+    elif (type(instance.child_obj) == AnnualAdmissionApplication and (proposals_aaa or approvals_aap or
+            proposals_aua or approvals_aup_sus or proposals_mla or approvals_ml_sus)):
         association_fail = True
-    elif type(instance.child_obj) == AuthorisedUserApplication and proposals_aua or approvals_aup:
+    elif type(instance.child_obj) == AuthorisedUserApplication and (proposals_aua or approvals_aup):
         association_fail = True
-    elif type(instance.child_obj) == MooringLicenceApplication and proposals_mla or approvals_ml:
+    elif type(instance.child_obj) == MooringLicenceApplication and (proposals_mla or approvals_ml):
         association_fail = True
     if association_fail:
         raise serializers.ValidationError("This vessel is already part of another application/permit/licence")

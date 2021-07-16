@@ -266,7 +266,7 @@ from '@/utils/hooks'
         computed: {
             mooringLicenceCurrentVesselDisplayText: function() {
                 let displayText = '';
-                if (this.proposal.mooring_licence_vessels && this.proposal.mooring_licence_vessels.length) {
+                if (this.proposal && this.proposal.mooring_licence_vessels && this.proposal.mooring_licence_vessels.length) {
                     displayText += `Your mooring licence ${this.proposal.approval_lodgement_number} 
                     currently lists the following vessels ${this.proposal.mooring_licence_vessels.toString()}.`;
                 }
@@ -831,7 +831,7 @@ from '@/utils/hooks'
                 this.initialiseCompanyNameSelect();
                 this.addEventListeners();
                 // read in Renewal/Amendment vessel details
-                if (this.proposal.processing_status === 'Draft' && !this.proposal.vessel_details_id && !(this.proposal.proposal_type.code==='new')) {
+                if (this.proposal && this.proposal.processing_status === 'Draft' && !this.proposal.vessel_details_id && !(this.proposal.proposal_type.code==='new')) {
                     let vm = this;
                     let res = null;
                     // check vessel ownership on the previous application
@@ -858,7 +858,7 @@ from '@/utils/hooks'
                     }
                 }
                 // read in dot_name
-                if (this.proposal.dot_name) {
+                if (this.proposal && this.proposal.dot_name) {
                     this.dotName = this.proposal.dot_name;
                 }
             });

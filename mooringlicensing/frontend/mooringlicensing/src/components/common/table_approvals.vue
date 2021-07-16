@@ -390,9 +390,12 @@ export default {
                         visible: true,
                         'render': function(row, type, full){
                             let links = '';
+                            /*
                             if (vm.is_internal && vm.wlaDash) {
                                 links += full.offer_link;
-                            } else if (vm.is_external && full.can_reissue) {
+                            } else
+                            */
+                            if (vm.is_external && full.can_reissue) {
                                 // approval has no view
                                 //links +=  `<a href='/external/approval/${full.id}'>View</a><br/>`;
                                 if(full.can_action || vm.debug){
@@ -411,6 +414,9 @@ export default {
                                         links +=  `<a href='#${full.id}' data-reissue-approval='${full.current_proposal_id}'>Reissue</a><br/>`;
                                 }
                                 */
+                                if (vm.is_internal && vm.wlaDash) {
+                                    links += full.offer_link;
+                                }
                                 if(vm.check_assessor(full)){
                                     if(full.can_reissue && full.can_action){
                                         links +=  `<a href='#${full.id}' data-cancel-approval='${full.id}'>Cancel</a><br/>`;
