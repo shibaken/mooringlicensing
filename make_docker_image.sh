@@ -1,7 +1,7 @@
 #!/bin/bash
 ## sole parameter is an integer indicating incremental daily version
 BUILD_TAG=dbcawa/mooringlicensing:v$(date +%Y.%m.%d).$1
-git checkout dev &&
+git checkout dbca_dev &&
 git pull &&
 cd mooringlicensing/frontend/mooringlicensing/ &&
 npm run build &&
