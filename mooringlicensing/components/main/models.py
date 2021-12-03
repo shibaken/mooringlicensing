@@ -375,16 +375,16 @@ class NumberOfDaysSetting(RevisionedMixin):
         return setting
 
 
-import reversion
-reversion.register(UserSystemSettings, follow=[])
-reversion.register(CommunicationsLogEntry, follow=[])
-reversion.register(ApplicationType, follow=['proposalstandardrequirement_set', 'feeseason_set', 'feeconstructor_set', 'oracle_code_items'])
-reversion.register(GlobalSettings, follow=[])
-reversion.register(SystemMaintenance, follow=[])
-reversion.register(TemporaryDocumentCollection, follow=['documents'])
-reversion.register(TemporaryDocument, follow=[])
-reversion.register(VesselSizeCategoryGroup, follow=['vessel_size_categories', 'fee_constructors'])
-reversion.register(VesselSizeCategory, follow=['feeitem_set'])
-reversion.register(NumberOfDaysType, follow=['settings'])
-reversion.register(NumberOfDaysSetting, follow=[])
+#import reversion
+#reversion.register(UserSystemSettings, follow=[])
+#reversion.register(CommunicationsLogEntry, follow=[])
+#reversion.register(ApplicationType, follow=['proposalstandardrequirement_set', 'feeseason_set', 'feeconstructor_set', 'oracle_code_items'])
+#reversion.register(GlobalSettings, follow=[])
+#reversion.register(SystemMaintenance, follow=[])
+#reversion.register(TemporaryDocumentCollection, follow=['documents'])
+#reversion.register(TemporaryDocument, follow=[])
+#reversion.register(VesselSizeCategoryGroup, follow=['vessel_size_categories', 'fee_constructors'])
+#reversion.register(VesselSizeCategory, follow=['feeitem_set'])
+#reversion.register(NumberOfDaysType, follow=['settings'])
+#reversion.register(NumberOfDaysSetting, follow=[])
 

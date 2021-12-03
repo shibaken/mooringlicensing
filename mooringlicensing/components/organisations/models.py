@@ -788,18 +788,18 @@ class OrganisationRequestLogEntry(CommunicationsLogEntry):
 
 
 
-import reversion
 #reversion.register(ledger_organisation, follow=['organisation_set'])
-reversion.register(Organisation, follow=['contacts', 'userdelegation_set', 'action_logs', 'comms_logs', 'org_applications', 'org_approvals'])
-reversion.register(OrganisationContact, follow=[])
-reversion.register(UserDelegation, follow=['organisation', 'user'])
-reversion.register(OrganisationAction, follow=[])
-reversion.register(OrganisationLogDocument, follow=[])
-reversion.register(OrganisationLogEntry, follow=['documents'])
-reversion.register(OrganisationRequest, follow=['action_logs', 'organisationrequestdeclineddetails_set', 'comms_logs'])
-reversion.register(OrganisationAccessGroup, follow=[])
-reversion.register(OrganisationRequestUserAction, follow=[])
-reversion.register(OrganisationRequestDeclinedDetails, follow=[])
-reversion.register(OrganisationRequestLogDocument, follow=[])
-reversion.register(OrganisationRequestLogEntry, follow=['documents'])
+#import reversion
+#reversion.register(Organisation, follow=['contacts', 'userdelegation_set', 'action_logs', 'comms_logs', 'org_applications', 'org_approvals'])
+#reversion.register(OrganisationContact, follow=[])
+#reversion.register(UserDelegation, follow=['organisation', 'user'])
+#reversion.register(OrganisationAction, follow=[])
+#reversion.register(OrganisationLogDocument, follow=[])
+#reversion.register(OrganisationLogEntry, follow=['documents'])
+#reversion.register(OrganisationRequest, follow=['action_logs', 'organisationrequestdeclineddetails_set', 'comms_logs'])
+#reversion.register(OrganisationAccessGroup, follow=[])
+#reversion.register(OrganisationRequestUserAction, follow=[])
+#reversion.register(OrganisationRequestDeclinedDetails, follow=[])
+#reversion.register(OrganisationRequestLogDocument, follow=[])
+#reversion.register(OrganisationRequestLogEntry, follow=['documents'])
 

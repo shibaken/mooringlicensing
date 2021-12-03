@@ -578,16 +578,16 @@ class OracleCodeItem(RevisionedMixin):
         app_label = 'mooringlicensing'
 
 
-import reversion
-reversion.register(DcvAdmissionFee, follow=[])
-reversion.register(DcvPermitFee, follow=[])
-reversion.register(StickerActionFee, follow=['sticker_action_details'])
-reversion.register(FeeItemApplicationFee, follow=['fee_item', 'application_fee', 'vessel_details'])
-reversion.register(ApplicationFee, follow=['feeitemapplicationfee_set'])
-reversion.register(FeeSeason, follow=['fee_periods', 'fee_constructors', 'dcvadmissionarrival_set', 'dcv_permits', 'sticker_set'])
-reversion.register(FeePeriod, follow=['feeitem_set'])
-reversion.register(FeeConstructor, follow=['feeitem_set', 'dcv_admission_arrivals', 'sticker_set'])
-reversion.register(FeeItemStickerReplacement, follow=[])
-reversion.register(FeeItem, follow=['dcv_admission_fees', 'dcv_permit_fees', 'feeitemapplicationfee_set', 'application_fees'])
-reversion.register(OracleCodeItem, follow=[])
+#import reversion
+#reversion.register(DcvAdmissionFee, follow=[])
+#reversion.register(DcvPermitFee, follow=[])
+#reversion.register(StickerActionFee, follow=['sticker_action_details'])
+#reversion.register(FeeItemApplicationFee, follow=['fee_item', 'application_fee', 'vessel_details'])
+#reversion.register(ApplicationFee, follow=['feeitemapplicationfee_set'])
+#reversion.register(FeeSeason, follow=['fee_periods', 'fee_constructors', 'dcvadmissionarrival_set', 'dcv_permits', 'sticker_set'])
+#reversion.register(FeePeriod, follow=['feeitem_set'])
+#reversion.register(FeeConstructor, follow=['feeitem_set', 'dcv_admission_arrivals', 'sticker_set'])
+#reversion.register(FeeItemStickerReplacement, follow=[])
+#reversion.register(FeeItem, follow=['dcv_admission_fees', 'dcv_permit_fees', 'feeitemapplicationfee_set', 'application_fees'])
+#reversion.register(OracleCodeItem, follow=[])
 
