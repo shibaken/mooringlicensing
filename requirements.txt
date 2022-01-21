@@ -1,5 +1,5 @@
 Django==1.11.29
-ipython==7.19.0
+ipython==7.31.1
 jedi==0.17.2
 git+https://github.com/dbca-wa/ledger#egg=ledger
 django-extensions==1.9.8
