@@ -67,15 +67,7 @@ class Command(BaseCommand):
                 if not ml_meet_vessel_requirement(approval, boundary_date):
                     approvals.append(approval)
 
-        # Construct queries
-        # queries = Q()
-        # queries &= Q(status__in=(Approval.APPROVAL_STATUS_CURRENT, Approval.APPROVAL_STATUS_SUSPENDED))
-        # queries &= Q(current_proposal__vessel_ownership__end_date__lt=boundary_date)
-        # queries &= Q(vessel_nomination_reminder_sent=True)
-        # if debug:
-        #     queries = queries | Q(lodgement_number__iexact=approval_lodgement_number)
-
-        for a in approval_class.objects.filter(queries):
+        for a in approvals:
             try:
                 send_approval_cancelled_due_to_no_vessels_nominated_mail(a)
                 # a.vessel_nomination_reminder_sent = True

@@ -27,7 +27,7 @@ module.exports = {
     env: require('./dev.env'),
     port: require('./dev.env').PORT.replace(/\"/g,""),
     webpackHost: require('./dev.env').WEBPACK_HOST,
-    autoOpenBrowser: true,
+    autoOpenBrowser: false,
     assetsSubDirectory: 'static',
     assetsPublicPath: '/',
     proxyTable: {},
