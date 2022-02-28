@@ -486,14 +486,15 @@ from '@/utils/hooks'
                     if (!this.previousApplicationVesselDetails) {
                         return
                     }
-                    if (this.vesselDetails.berth_mooring.trim() !== this.previousApplicationVesselDetails.berth_mooring.trim() ||
+                    if (
+                        (this.vesselDetails.berth_mooring && this.vesselDetails.berth_mooring.trim() !== this.previousApplicationVesselDetails.berth_mooring.trim()) ||
                         this.vesselDetails.vessel_draft != this.previousApplicationVesselDetails.vessel_draft ||
                         this.vesselDetails.vessel_length != this.previousApplicationVesselDetails.vessel_length ||
-                        this.vesselDetails.vessel_name.trim() !== this.previousApplicationVesselDetails.vessel_name.trim() |
+                        (this.vesselDetails.vessel_name && this.vesselDetails.vessel_name.trim() !== this.previousApplicationVesselDetails.vessel_name.trim()) ||
                         this.vesselDetails.vessel_type !== this.previousApplicationVesselDetails.vessel_type ||
                         this.vesselDetails.vessel_name.weight != this.previousApplicationVesselDetails.vessel_name.weight ||
                         this.vesselOwnership.percentage != this.previousApplicationVesselOwnership.percentage ||
-                        this.vesselOwnership.dot_name.trim() !== this.previousApplicationVesselOwnership.dot_name.trim()
+                        (this.vesselOwnership.dot_name && this.vesselOwnership.dot_name.trim() !== this.previousApplicationVesselOwnership.dot_name.trim())
                     ) {
                         vesselChanged = true;
                     }
