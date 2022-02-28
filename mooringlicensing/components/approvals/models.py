@@ -1362,6 +1362,12 @@ class MooringLicence(Approval):
     def vessel_list(self):
         return self.current_vessel_attributes('vessel')
 
+    def get_most_recent_end_date(self):
+        # This function returns None if no vessels have been sold
+        # If even one vessel has been sold, this function returns the end_date even if there is a current vessel.
+        proposal = self.proposal_set.latest('vessel_ownership__end_date')
+        return proposal.vessel_ownership.end_date
+
     @property
     def vessel_list_for_payment(self):
         vessels = []
