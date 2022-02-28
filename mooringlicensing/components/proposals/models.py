@@ -133,7 +133,7 @@ class ProposalType(RevisionedMixin):
 
     def __str__(self):
         # return 'id: {} code: {}'.format(self.id, self.code)
-        return self.description
+        return self.description if self.description else ''
 
     class Meta:
         app_label = 'mooringlicensing'
