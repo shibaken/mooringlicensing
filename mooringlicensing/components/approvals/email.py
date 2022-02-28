@@ -176,7 +176,7 @@ def send_approval_expire_email_notification(approval):
     msg = email.send(proposal.submitter.email, cc=all_ccs, context=context)
     sender = settings.DEFAULT_FROM_EMAIL
     try:
-    	sender_user = EmailUser.objects.get(email__icontains=sender)
+        sender_user = EmailUser.objects.get(email__icontains=sender)
     except:
         EmailUser.objects.create(email=sender, password='')
         sender_user = EmailUser.objects.get(email__icontains=sender)
@@ -190,13 +190,22 @@ def send_approval_expire_email_notification(approval):
 
 
 def send_approval_cancelled_due_to_no_vessels_nominated_mail(approval, request=None):
+    from mooringlicensing.components.approvals.models import MooringLicence
+
     email = ApprovalCancelledDueToNoVesselsNominatedEmail(approval)
     proposal = approval.current_proposal
+
+    if approval.application_type.code == MooringLicence.code:
+        # When ML
+        due_date = approval.get_most_recent_end_date() + relativedelta(months=+6)
+    else:
+        # When WL
+        due_date = approval.current_proposal.vessel_ownership.end_date + relativedelta(months=+6)
 
     context = {
         'public_url': get_public_url(request),
         'approval': approval,
-        'due_date': approval.current_proposal.vessel_ownership.end_date + relativedelta(months=+6),
+        'due_date': due_date,
     }
 
     sender = settings.DEFAULT_FROM_EMAIL
