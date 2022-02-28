@@ -24,7 +24,7 @@ FROM builder_base_mooringlicensing as python_libs_mooringlicensing
 WORKDIR /app
 
 COPY requirements.txt ./
-COPY ml_git_history ./
+COPY git_history_recent ./
 RUN touch /app/rand_hash
 #RUN touch /app/git_history
 
