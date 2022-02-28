@@ -86,7 +86,7 @@ def update_mooring_comms_log_filename(instance, filename):
 
 
 class ProposalDocument(Document):
-    proposal = models.ForeignKey('Proposal',related_name='documents')
+    proposal = models.ForeignKey('Proposal',related_name='documents', on_delete=models.CASCADE)
     _file = models.FileField(upload_to=update_proposal_doc_filename, max_length=512)
     input_name = models.CharField(max_length=255,null=True,blank=True)
     can_delete = models.BooleanField(default=True) # after initial submit prevent document from being deleted
@@ -99,7 +99,7 @@ class ProposalDocument(Document):
 
 
 class RequirementDocument(Document):
-    requirement = models.ForeignKey('ProposalRequirement',related_name='requirement_documents')
+    requirement = models.ForeignKey('ProposalRequirement',related_name='requirement_documents', on_delete=models.CASCADE)
     _file = models.FileField(upload_to=update_requirement_doc_filename, max_length=512)
     input_name = models.CharField(max_length=255,null=True,blank=True)
     can_delete = models.BooleanField(default=True) # after initial submit prevent document from being deleted
@@ -213,7 +213,7 @@ class Proposal(DirtyFieldsMixin, RevisionedMixin):
         (PROCESSING_STATUS_EXPIRED, 'Expired'),
     )
 
-    proposal_type = models.ForeignKey(ProposalType, blank=True, null=True)
+    proposal_type = models.ForeignKey(ProposalType, blank=True, null=True, on_delete=models.SET_NULL)
 
     assessor_data = JSONField(blank=True, null=True)
     comment_data = JSONField(blank=True, null=True)
@@ -225,13 +225,14 @@ class Proposal(DirtyFieldsMixin, RevisionedMixin):
         Organisation,
         blank=True,
         null=True,
+        on_delete=models.SET_NULL,
         related_name='org_applications') # not currently used in ML
     lodgement_number = models.CharField(max_length=9, blank=True, default='')
     lodgement_sequence = models.IntegerField(blank=True, default=0)
     lodgement_date = models.DateTimeField(blank=True, null=True)
 
-    proxy_applicant = models.ForeignKey(EmailUser, blank=True, null=True, related_name='mooringlicensing_proxy') # not currently used by ML
-    submitter = models.ForeignKey(EmailUser, blank=True, null=True, related_name='mooringlicensing_proposals')
+    proxy_applicant = models.ForeignKey(EmailUser, blank=True, null=True, related_name='mooringlicensing_proxy', on_delete=models.SET_NULL) # not currently used by ML
+    submitter = models.ForeignKey(EmailUser, blank=True, null=True, related_name='mooringlicensing_proposals', on_delete=models.SET_NULL)
 
     assigned_officer = models.ForeignKey(EmailUser, blank=True, null=True, related_name='mooringlicensing_proposals_assigned', on_delete=models.SET_NULL)
     assigned_approver = models.ForeignKey(EmailUser, blank=True, null=True, related_name='mooringlicensing_proposals_approvals', on_delete=models.SET_NULL)
@@ -239,18 +240,18 @@ class Proposal(DirtyFieldsMixin, RevisionedMixin):
                                          default=PROCESSING_STATUS_CHOICES[0][0])
     prev_processing_status = models.CharField(max_length=40, blank=True, null=True)
 
-    approval = models.ForeignKey('mooringlicensing.Approval',null=True,blank=True)
-    previous_application = models.ForeignKey('self', on_delete=models.PROTECT, blank=True, null=True, related_name="succeeding_proposals")
+    approval = models.ForeignKey('mooringlicensing.Approval',null=True,blank=True, on_delete=models.SET_NULL)
+    previous_application = models.ForeignKey('self', on_delete=models.SET_NULL, blank=True, null=True, related_name="succeeding_proposals")
 
     proposed_decline_status = models.BooleanField(default=False)
     title = models.CharField(max_length=255,null=True,blank=True)
     approval_level = models.CharField('Activity matrix approval level', max_length=255,null=True,blank=True)
-    approval_level_document = models.ForeignKey(ProposalDocument, blank=True, null=True, related_name='approval_level_document')
+    approval_level_document = models.ForeignKey(ProposalDocument, blank=True, null=True, related_name='approval_level_document', on_delete=models.SET_NULL)
     approval_comment = models.TextField(blank=True)
     #If the proposal is created as part of migration of approvals
     migrated=models.BooleanField(default=False)
-    vessel_details = models.ForeignKey('VesselDetails', blank=True, null=True)
-    vessel_ownership = models.ForeignKey('VesselOwnership', blank=True, null=True)
+    vessel_details = models.ForeignKey('VesselDetails', blank=True, null=True, on_delete=models.SET_NULL)
+    vessel_ownership = models.ForeignKey('VesselOwnership', blank=True, null=True, on_delete=models.SET_NULL)
     # draft proposal status VesselDetails records - goes to VesselDetails master record after submit
     rego_no = models.CharField(max_length=200, blank=True, null=True)
     vessel_id = models.IntegerField(null=True,blank=True)
@@ -285,7 +286,7 @@ class Proposal(DirtyFieldsMixin, RevisionedMixin):
     endorser_reminder_sent = models.BooleanField(default=False)
     ## MLA
     allocated_mooring = models.ForeignKey('Mooring', null=True, blank=True, on_delete=models.SET_NULL, related_name="ria_generated_proposal")
-    waiting_list_allocation = models.ForeignKey('mooringlicensing.Approval',null=True,blank=True, related_name="ria_generated_proposal")
+    waiting_list_allocation = models.ForeignKey('mooringlicensing.Approval',null=True,blank=True, related_name="ria_generated_proposal", on_delete=models.SET_NULL)
     date_invited = models.DateField(blank=True, null=True)  # The date RIA has invited the WLAllocation holder.  This application is expired in a configurable number of days after the invitation without submit.
     invitee_reminder_sent = models.BooleanField(default=False)
     temporary_document_collection_id = models.IntegerField(blank=True, null=True)
@@ -1634,7 +1635,7 @@ class StickerPrintingResponseEmail(models.Model):
 
 class StickerPrintingResponse(Document):
     _file = models.FileField(upload_to=update_sticker_response_doc_filename, max_length=512)
-    sticker_printing_response_email = models.ForeignKey(StickerPrintingResponseEmail, blank=True, null=True)
+    sticker_printing_response_email = models.ForeignKey(StickerPrintingResponseEmail, blank=True, null=True, on_delete=models.SET_NULL)
     processed = models.BooleanField(default=False)  # Processed by a cron to update sticker details
     no_errors_when_process = models.NullBooleanField(default=None)
 
@@ -1655,7 +1656,7 @@ class StickerPrintingResponse(Document):
 
 
 class WaitingListApplication(Proposal):
-    proposal = models.OneToOneField(Proposal, parent_link=True)
+    proposal = models.OneToOneField(Proposal, parent_link=True, on_delete=models.CASCADE)
     code = 'wla'
     prefix = 'WL'
 
@@ -1838,7 +1839,7 @@ class WaitingListApplication(Proposal):
 
 
 class AnnualAdmissionApplication(Proposal):
-    proposal = models.OneToOneField(Proposal, parent_link=True)
+    proposal = models.OneToOneField(Proposal, parent_link=True, on_delete=models.CASCADE)
     code = 'aaa'
     prefix = 'AA'
     new_application_text = "I want to apply for an annual admission permit"
@@ -2013,7 +2014,7 @@ class AnnualAdmissionApplication(Proposal):
 
 
 class AuthorisedUserApplication(Proposal):
-    proposal = models.OneToOneField(Proposal, parent_link=True)
+    proposal = models.OneToOneField(Proposal, parent_link=True, on_delete=models.CASCADE)
     code = 'aua'
     prefix = 'AU'
     new_application_text = "I want to apply for an an authorised user permit"
@@ -2382,7 +2383,7 @@ class MooringLicenceApplication(Proposal):
     REASON_FOR_EXPIRY_NOT_SUBMITTED = 'not_submitted'
     REASON_FOR_EXPIRY_NO_DOCUMENTS = 'no_documents'
 
-    proposal = models.OneToOneField(Proposal, parent_link=True)
+    proposal = models.OneToOneField(Proposal, parent_link=True, on_delete=models.CASCADE)
     code = 'mla'
     prefix = 'ML'
     new_application_text = ""
@@ -2766,7 +2767,7 @@ class MooringLicenceApplication(Proposal):
 
 
 class ProposalLogDocument(Document):
-    log_entry = models.ForeignKey('ProposalLogEntry',related_name='documents')
+    log_entry = models.ForeignKey('ProposalLogEntry',related_name='documents', on_delete=models.CASCADE)
     _file = models.FileField(upload_to=update_proposal_comms_log_filename, max_length=512)
 
     class Meta:
@@ -2774,7 +2775,7 @@ class ProposalLogDocument(Document):
 
 
 class ProposalLogEntry(CommunicationsLogEntry):
-    proposal = models.ForeignKey(Proposal, related_name='comms_logs')
+    proposal = models.ForeignKey(Proposal, related_name='comms_logs', on_delete=models.CASCADE)
 
     def __str__(self):
         return '{} - {}'.format(self.reference, self.subject)
@@ -2839,7 +2840,7 @@ class Mooring(RevisionedMixin):
     )
 
     name = models.CharField(max_length=100)
-    mooring_bay = models.ForeignKey(MooringBay)
+    mooring_bay = models.ForeignKey(MooringBay, on_delete=models.CASCADE)
     active = models.BooleanField(default=True)
     vessel_size_limit = models.DecimalField(max_digits=8, decimal_places=2, default='0.00') # does not exist in MB
     vessel_draft_limit = models.DecimalField(max_digits=8, decimal_places=2, default='0.00')
@@ -2856,7 +2857,7 @@ class Mooring(RevisionedMixin):
     available_moorings = AvailableMooringManager()
     # Used for WLAllocation create MLApplication check
     # mooring licence can onl,y have one Mooring
-    mooring_licence = models.OneToOneField('MooringLicence', blank=True, null=True, related_name="mooring")
+    mooring_licence = models.OneToOneField('MooringLicence', blank=True, null=True, related_name="mooring", on_delete=models.SET_NULL)
 
     def __str__(self):
         return self.name
@@ -2894,7 +2895,7 @@ class Mooring(RevisionedMixin):
         return suitable
 
 class MooringLogDocument(Document):
-    log_entry = models.ForeignKey('MooringLogEntry',related_name='documents')
+    log_entry = models.ForeignKey('MooringLogEntry',related_name='documents', on_delete=models.CASCADE)
     _file = models.FileField(upload_to=update_mooring_comms_log_filename, max_length=512)
 
     class Meta:
@@ -2902,7 +2903,7 @@ class MooringLogDocument(Document):
 
 
 class MooringLogEntry(CommunicationsLogEntry):
-    mooring = models.ForeignKey(Mooring, related_name='comms_logs')
+    mooring = models.ForeignKey(Mooring, related_name='comms_logs', on_delete=models.CASCADE)
 
     def __str__(self):
         return '{} - {}'.format(self.reference, self.subject)
@@ -2926,12 +2927,12 @@ class MooringUserAction(UserAction):
             what=str(action)
         )
 
-    mooring = models.ForeignKey(Mooring, related_name='action_logs')
+    mooring = models.ForeignKey(Mooring, related_name='action_logs', on_delete=models.CASCADE)
 
 
 class Vessel(RevisionedMixin):
     rego_no = models.CharField(max_length=200, unique=True, blank=False, null=False)
-    blocking_owner = models.ForeignKey('VesselOwnership', blank=True, null=True, related_name='blocked_vessel')
+    blocking_owner = models.ForeignKey('VesselOwnership', blank=True, null=True, related_name='blocked_vessel', on_delete=models.SET_NULL)
 
     class Meta:
         verbose_name_plural = "Vessels"
@@ -3023,7 +3024,7 @@ class Vessel(RevisionedMixin):
 
 
 class VesselLogDocument(Document):
-    log_entry = models.ForeignKey('VesselLogEntry',related_name='documents')
+    log_entry = models.ForeignKey('VesselLogEntry',related_name='documents', on_delete=models.CASCADE)
     _file = models.FileField(upload_to=update_vessel_comms_log_filename, max_length=512)
 
     class Meta:
@@ -3031,7 +3032,7 @@ class VesselLogDocument(Document):
 
 
 class VesselLogEntry(CommunicationsLogEntry):
-    vessel = models.ForeignKey(Vessel, related_name='comms_logs')
+    vessel = models.ForeignKey(Vessel, related_name='comms_logs', on_delete=models.CASCADE)
 
     def __str__(self):
         return '{} - {}'.format(self.reference, self.subject)
@@ -3047,7 +3048,7 @@ class VesselDetailsManager(models.Manager):
 
 class VesselDetails(RevisionedMixin): # ManyToManyField link in Proposal
     vessel_type = models.CharField(max_length=20, choices=VESSEL_TYPES)
-    vessel = models.ForeignKey(Vessel)
+    vessel = models.ForeignKey(Vessel, on_delete=models.CASCADE)
     vessel_name = models.CharField(max_length=400)
     vessel_length = models.DecimalField(max_digits=8, decimal_places=2, default='0.00') # does not exist in MB
     vessel_draft = models.DecimalField(max_digits=8, decimal_places=2, default='0.00')
@@ -3080,10 +3081,10 @@ class CompanyOwnership(RevisionedMixin):
             ('old', 'Old'),
             ('declined', 'Declined'),
             )
-    blocking_proposal = models.ForeignKey(Proposal, blank=True, null=True)
+    blocking_proposal = models.ForeignKey(Proposal, blank=True, null=True, on_delete=models.SET_NULL)
     status = models.CharField(max_length=50, choices=STATUS_TYPES, default="draft") # can be approved, old, draft, declined
-    vessel = models.ForeignKey(Vessel)
-    company = models.ForeignKey('Company')
+    vessel = models.ForeignKey(Vessel, on_delete=models.CASCADE)
+    company = models.ForeignKey('Company', on_delete=models.CASCADE)
     percentage = models.IntegerField(null=True, blank=True)
     ## TODO: delete start and end dates if no longer required
     start_date = models.DateTimeField(default=timezone.now)
@@ -3135,9 +3136,9 @@ class VesselOwnershipManager(models.Manager):
 
 
 class VesselOwnership(RevisionedMixin):
-    owner = models.ForeignKey('Owner')
-    vessel = models.ForeignKey(Vessel)
-    company_ownership = models.ForeignKey(CompanyOwnership, null=True, blank=True)
+    owner = models.ForeignKey('Owner', on_delete=models.CASCADE)
+    vessel = models.ForeignKey(Vessel, on_delete=models.CASCADE)
+    company_ownership = models.ForeignKey(CompanyOwnership, null=True, blank=True, on_delete=models.CASCADE)
     percentage = models.IntegerField(null=True, blank=True)
     start_date = models.DateTimeField(default=timezone.now)
     # date of sale
@@ -3189,7 +3190,7 @@ class VesselOwnership(RevisionedMixin):
 
 
 class VesselRegistrationDocument(Document):
-    vessel_ownership = models.ForeignKey(VesselOwnership,related_name='vessel_registration_documents')
+    vessel_ownership = models.ForeignKey(VesselOwnership,related_name='vessel_registration_documents', on_delete=models.CASCADE)
     _file = models.FileField(max_length=512)
     input_name = models.CharField(max_length=255,null=True,blank=True)
     can_delete = models.BooleanField(default=True) # after initial submit prevent document from being deleted
@@ -3202,7 +3203,7 @@ class VesselRegistrationDocument(Document):
 
 
 class Owner(RevisionedMixin):
-    emailuser = models.OneToOneField(EmailUser)
+    emailuser = models.OneToOneField(EmailUser, on_delete=models.CASCADE)
     # add on approval only
     vessels = models.ManyToManyField(Vessel, through=VesselOwnership) # these owner/vessel association
 
@@ -3228,7 +3229,7 @@ class Company(RevisionedMixin):
 
 
 class InsuranceCertificateDocument(Document):
-    proposal = models.ForeignKey(Proposal,related_name='insurance_certificate_documents')
+    proposal = models.ForeignKey(Proposal,related_name='insurance_certificate_documents', on_delete=models.CASCADE)
     _file = models.FileField(max_length=512)
     input_name = models.CharField(max_length=255,null=True,blank=True)
     can_delete = models.BooleanField(default=True) # after initial submit prevent document from being deleted
@@ -3241,7 +3242,7 @@ class InsuranceCertificateDocument(Document):
 
 
 class HullIdentificationNumberDocument(Document):
-    proposal = models.ForeignKey(Proposal,related_name='hull_identification_number_documents')
+    proposal = models.ForeignKey(Proposal,related_name='hull_identification_number_documents', on_delete=models.CASCADE)
     _file = models.FileField(max_length=512)
     input_name = models.CharField(max_length=255,null=True,blank=True)
     can_delete = models.BooleanField(default=True) # after initial submit prevent document from being deleted
@@ -3255,7 +3256,7 @@ class HullIdentificationNumberDocument(Document):
 
 class ElectoralRollDocument(Document):
     #emailuser = models.ForeignKey(EmailUser,related_name='electoral_roll_documents')
-    proposal = models.ForeignKey(Proposal,related_name='electoral_roll_documents')
+    proposal = models.ForeignKey(Proposal,related_name='electoral_roll_documents', on_delete=models.CASCADE)
     _file = models.FileField(max_length=512)
     input_name = models.CharField(max_length=255,null=True,blank=True)
     can_delete = models.BooleanField(default=True) # after initial submit prevent document from being deleted
@@ -3268,7 +3269,7 @@ class ElectoralRollDocument(Document):
 
 
 class MooringReportDocument(Document):
-    proposal = models.ForeignKey(Proposal, related_name='mooring_report_documents')
+    proposal = models.ForeignKey(Proposal, related_name='mooring_report_documents', on_delete=models.CASCADE)
     _file = models.FileField(max_length=512)
     input_name = models.CharField(max_length=255, null=True, blank=True)
     can_delete = models.BooleanField(default=True) # after initial submit prevent document from being deleted
@@ -3281,7 +3282,7 @@ class MooringReportDocument(Document):
 
 
 class WrittenProofDocument(Document):
-    proposal = models.ForeignKey(Proposal, related_name='written_proof_documents')
+    proposal = models.ForeignKey(Proposal, related_name='written_proof_documents', on_delete=models.CASCADE)
     _file = models.FileField(max_length=512)
     input_name = models.CharField(max_length=255, null=True, blank=True)
     can_delete = models.BooleanField(default=True) # after initial submit prevent document from being deleted
@@ -3294,7 +3295,7 @@ class WrittenProofDocument(Document):
 
 
 class SignedLicenceAgreementDocument(Document):
-    proposal = models.ForeignKey(Proposal, related_name='signed_licence_agreement_documents')
+    proposal = models.ForeignKey(Proposal, related_name='signed_licence_agreement_documents', on_delete=models.CASCADE)
     _file = models.FileField(max_length=512)
     input_name = models.CharField(max_length=255, null=True, blank=True)
     can_delete = models.BooleanField(default=True)
@@ -3307,7 +3308,7 @@ class SignedLicenceAgreementDocument(Document):
 
 
 class ProofOfIdentityDocument(Document):
-    proposal = models.ForeignKey(Proposal, related_name='proof_of_identity_documents')
+    proposal = models.ForeignKey(Proposal, related_name='proof_of_identity_documents', on_delete=models.CASCADE)
     _file = models.FileField(max_length=512)
     input_name = models.CharField(max_length=255, null=True, blank=True)
     can_delete = models.BooleanField(default=True)
@@ -3320,10 +3321,10 @@ class ProofOfIdentityDocument(Document):
 
 
 class ProposalRequest(models.Model):
-    proposal = models.ForeignKey(Proposal, related_name='proposalrequest_set')
+    proposal = models.ForeignKey(Proposal, related_name='proposalrequest_set', on_delete=models.CASCADE)
     subject = models.CharField(max_length=200, blank=True)
     text = models.TextField(blank=True)
-    officer = models.ForeignKey(EmailUser, null=True)
+    officer = models.ForeignKey(EmailUser, null=True, on_delete=models.SET_NULL)
 
     def __str__(self):
         return '{} - {}'.format(self.subject, self.text)
@@ -3357,7 +3358,7 @@ class AmendmentRequest(ProposalRequest):
     STATUS_CHOICES = (('requested', 'Requested'), ('amended', 'Amended'))
 
     status = models.CharField('Status', max_length=30, choices=STATUS_CHOICES, default=STATUS_CHOICES[0][0])
-    reason = models.ForeignKey(AmendmentReason, blank=True, null=True)
+    reason = models.ForeignKey(AmendmentReason, blank=True, null=True, on_delete=models.SET_NULL)
 
     class Meta:
         app_label = 'mooringlicensing'
@@ -3389,8 +3390,8 @@ class AmendmentRequest(ProposalRequest):
 
 
 class ProposalDeclinedDetails(models.Model):
-    proposal = models.OneToOneField(Proposal)
-    officer = models.ForeignKey(EmailUser, null=False)
+    proposal = models.OneToOneField(Proposal, null=True, on_delete=models.SET_NULL)
+    officer = models.ForeignKey(EmailUser, null=True, on_delete=models.SET_NULL)
     reason = models.TextField(blank=True)
     cc_email = models.TextField(null=True)
 
@@ -3403,7 +3404,7 @@ class ProposalStandardRequirement(RevisionedMixin):
     text = models.TextField()
     code = models.CharField(max_length=10, unique=True)
     obsolete = models.BooleanField(default=False)
-    application_type = models.ForeignKey(ApplicationType, null=True, blank=True)
+    application_type = models.ForeignKey(ApplicationType, null=True, blank=True, on_delete=models.CASCADE)
     participant_number_required = models.BooleanField(default=False)
     default = models.BooleanField(default=False)
 
@@ -3490,18 +3491,18 @@ class ProposalUserAction(UserAction):
             what=str(action)
         )
 
-    who = models.ForeignKey(EmailUser, null=True, blank=True)
+    who = models.ForeignKey(EmailUser, null=True, blank=True, on_delete=models.SET_NULL)
     when = models.DateTimeField(null=False, blank=False, auto_now_add=True)
     what = models.TextField(blank=False)
-    proposal = models.ForeignKey(Proposal, related_name='action_logs')
+    proposal = models.ForeignKey(Proposal, related_name='action_logs', on_delete=models.CASCADE)
 
 
 class ProposalRequirement(OrderedModel):
     RECURRENCE_PATTERNS = [(1, 'Weekly'), (2, 'Monthly'), (3, 'Yearly')]
-    standard_requirement = models.ForeignKey(ProposalStandardRequirement,null=True,blank=True)
+    standard_requirement = models.ForeignKey(ProposalStandardRequirement,null=True,blank=True,on_delete=models.SET_NULL)
     free_requirement = models.TextField(null=True,blank=True)
     standard = models.BooleanField(default=True)
-    proposal = models.ForeignKey(Proposal,related_name='requirements')
+    proposal = models.ForeignKey(Proposal,related_name='requirements',on_delete=models.CASCADE)
     due_date = models.DateField(null=True,blank=True)
     recurrence = models.BooleanField(default=False)
     recurrence_pattern = models.SmallIntegerField(choices=RECURRENCE_PATTERNS,default=1)
@@ -3675,45 +3676,90 @@ class HelpPage(models.Model):
 
 
 import reversion
-reversion.register(Proposal, follow=["waitinglistapplication", "annualadmissionapplication", "authoriseduserapplication", "mooringlicenceapplication",
-    "documents","comms_logs",
-    "insurance_certificate_documents","hull_identification_number_documents", "electoral_roll_documents","mooring_report_documents",
-    "written_proof_documents","signed_licence_agreement_documents","proof_of_identity_documents",
-    "proposalrequest_set","proposaldeclineddetails",
-    "requirements","compliances","approvals",
-    ])
-reversion.register(WaitingListApplication)
-reversion.register(AnnualAdmissionApplication)
-reversion.register(AuthorisedUserApplication)
-reversion.register(MooringLicenceApplication)
-reversion.register(ProposalDocument)
-reversion.register(ProposalLogDocument)
-reversion.register(ProposalLogEntry, follow=["documents"])
-reversion.register(InsuranceCertificateDocument)
-reversion.register(HullIdentificationNumberDocument)
-reversion.register(ElectoralRollDocument)
-reversion.register(MooringReportDocument)
-reversion.register(WrittenProofDocument)
-reversion.register(SignedLicenceAgreementDocument)
-reversion.register(ProofOfIdentityDocument)
-reversion.register(ProposalRequest)
-reversion.register(ProposalDeclinedDetails)
-reversion.register(ProposalRequirement, follow=["requirement_documents",])
-reversion.register(RequirementDocument)
+#reversion.register(Proposal, follow=["waitinglistapplication", "annualadmissionapplication", "authoriseduserapplication", "mooringlicenceapplication",
+#    "documents","comms_logs",
+#    "insurance_certificate_documents","hull_identification_number_documents", "electoral_roll_documents","mooring_report_documents",
+#    "written_proof_documents","signed_licence_agreement_documents","proof_of_identity_documents",
+#    "proposalrequest_set","proposaldeclineddetails",
+#    "requirements","compliances","approvals",
+#    ])
+#reversion.register(WaitingListApplication)
+#reversion.register(AnnualAdmissionApplication)
+#reversion.register(AuthorisedUserApplication)
+#reversion.register(MooringLicenceApplication)
+#reversion.register(ProposalDocument)
+#reversion.register(ProposalLogDocument)
+#reversion.register(ProposalLogEntry, follow=["documents"])
+#reversion.register(InsuranceCertificateDocument)
+#reversion.register(HullIdentificationNumberDocument)
+#reversion.register(ElectoralRollDocument)
+#reversion.register(MooringReportDocument)
+#reversion.register(WrittenProofDocument)
+#reversion.register(SignedLicenceAgreementDocument)
+#reversion.register(ProofOfIdentityDocument)
+#reversion.register(ProposalRequest)
+#reversion.register(ProposalDeclinedDetails)
+#reversion.register(ProposalRequirement, follow=["requirement_documents",])
+#reversion.register(RequirementDocument)
+#
+#reversion.register(MooringBay)
+#reversion.register(Mooring, follow=["mooring_bay", "mooring_licence"])
+#reversion.register(MooringLogDocument)
+#reversion.register(MooringLogEntry, follow=["documents"])
+#reversion.register(MooringUserAction)
+#
+#reversion.register(Vessel, follow=["blocking_owner",])
+#reversion.register(VesselLogDocument)
+#reversion.register(VesselLogEntry, follow=["documents"])
+#reversion.register(VesselDetails, follow=["vessel"])
+#reversion.register(CompanyOwnership, follow=["blocking_proposal", "vessel", "company"])
+#reversion.register(VesselOwnership, follow=["owner", "vessel", "company_ownership"])
+#reversion.register(Owner)
+#reversion.register(Company)
+#reversion.register(ProposalType)
 
-reversion.register(MooringBay)
-reversion.register(Mooring, follow=["mooring_bay", "mooring_licence"])
-reversion.register(MooringLogDocument)
-reversion.register(MooringLogEntry, follow=["documents"])
-reversion.register(MooringUserAction)
-
-reversion.register(Vessel, follow=["blocking_owner",])
-reversion.register(VesselLogDocument)
-reversion.register(VesselLogEntry, follow=["documents"])
-reversion.register(VesselDetails, follow=["vessel"])
-reversion.register(CompanyOwnership, follow=["blocking_proposal", "vessel", "company"])
-reversion.register(VesselOwnership, follow=["owner", "vessel", "company_ownership"])
-reversion.register(Owner)
-reversion.register(Company)
-reversion.register(ProposalType)
+reversion.register(ProposalDocument, follow=['approval_level_document'])
+reversion.register(RequirementDocument, follow=[])
+reversion.register(ProposalType, follow=['proposal_set', 'feeitem_set'])
+reversion.register(Proposal, follow=['documents', 'succeeding_proposals', 'comms_logs', 'companyownership_set', 'insurance_certificate_documents', 'hull_identification_number_documents', 'electoral_roll_documents', 'mooring_report_documents', 'written_proof_documents', 'signed_licence_agreement_documents', 'proof_of_identity_documents', 'proposalrequest_set', 'proposaldeclineddetails_set', 'action_logs', 'requirements', 'application_fees', 'approval_history_records', 'approvals', 'sticker_set', 'compliances'])
+reversion.register(StickerPrintingContact, follow=[])
+reversion.register(StickerPrintingBatch, follow=['sticker_set'])
+reversion.register(StickerPrintingResponseEmail, follow=['stickerprintingresponse_set'])
+reversion.register(StickerPrintingResponse, follow=['sticker_set'])
+reversion.register(WaitingListApplication, follow=['documents', 'succeeding_proposals', 'comms_logs', 'companyownership_set', 'insurance_certificate_documents', 'hull_identification_number_documents', 'electoral_roll_documents', 'mooring_report_documents', 'written_proof_documents', 'signed_licence_agreement_documents', 'proof_of_identity_documents', 'proposalrequest_set', 'proposaldeclineddetails_set', 'action_logs', 'requirements', 'application_fees', 'approval_history_records', 'approvals', 'sticker_set', 'compliances'])
+reversion.register(AnnualAdmissionApplication, follow=['documents', 'succeeding_proposals', 'comms_logs', 'companyownership_set', 'insurance_certificate_documents', 'hull_identification_number_documents', 'electoral_roll_documents', 'mooring_report_documents', 'written_proof_documents', 'signed_licence_agreement_documents', 'proof_of_identity_documents', 'proposalrequest_set', 'proposaldeclineddetails_set', 'action_logs', 'requirements', 'application_fees', 'approval_history_records', 'approvals', 'sticker_set', 'compliances'])
+reversion.register(AuthorisedUserApplication, follow=['documents', 'succeeding_proposals', 'comms_logs', 'companyownership_set', 'insurance_certificate_documents', 'hull_identification_number_documents', 'electoral_roll_documents', 'mooring_report_documents', 'written_proof_documents', 'signed_licence_agreement_documents', 'proof_of_identity_documents', 'proposalrequest_set', 'proposaldeclineddetails_set', 'action_logs', 'requirements', 'application_fees', 'approval_history_records', 'approvals', 'sticker_set', 'compliances'])
+reversion.register(MooringLicenceApplication, follow=['documents', 'succeeding_proposals', 'comms_logs', 'companyownership_set', 'insurance_certificate_documents', 'hull_identification_number_documents', 'electoral_roll_documents', 'mooring_report_documents', 'written_proof_documents', 'signed_licence_agreement_documents', 'proof_of_identity_documents', 'proposalrequest_set', 'proposaldeclineddetails_set', 'action_logs', 'requirements', 'application_fees', 'approval_history_records', 'approvals', 'sticker_set', 'compliances'])
+reversion.register(ProposalLogDocument, follow=[])
+reversion.register(ProposalLogEntry, follow=['documents'])
+reversion.register(MooringBay, follow=['proposal_set', 'mooring_set'])
+reversion.register(Mooring, follow=['proposal_set', 'ria_generated_proposal', 'comms_logs', 'action_logs', 'mooringonapproval_set', 'approval_set'])
+reversion.register(MooringLogDocument, follow=[])
+reversion.register(MooringLogEntry, follow=['documents'])
+reversion.register(MooringUserAction, follow=[])
+reversion.register(Vessel, follow=['comms_logs', 'vesseldetails_set', 'companyownership_set', 'vesselownership_set', 'owner_set', 'company_set'])
+reversion.register(VesselLogDocument, follow=[])
+reversion.register(VesselLogEntry, follow=['documents'])
+reversion.register(VesselDetails, follow=['proposal_set', 'feeitemapplicationfee_set'])
+reversion.register(CompanyOwnership, follow=['blocking_proposal', 'vessel', 'company'])
+reversion.register(VesselOwnership, follow=['owner', 'vessel', 'company_ownership'])
+reversion.register(VesselRegistrationDocument, follow=[])
+reversion.register(Owner, follow=['vesselownership_set'])
+reversion.register(Company, follow=['companyownership_set'])
+reversion.register(InsuranceCertificateDocument, follow=[])
+reversion.register(HullIdentificationNumberDocument, follow=[])
+reversion.register(ElectoralRollDocument, follow=[])
+reversion.register(MooringReportDocument, follow=[])
+reversion.register(WrittenProofDocument, follow=[])
+reversion.register(SignedLicenceAgreementDocument, follow=[])
+reversion.register(ProofOfIdentityDocument, follow=[])
+reversion.register(ProposalRequest, follow=[])
+reversion.register(ComplianceRequest, follow=[])
+reversion.register(AmendmentReason, follow=['amendmentrequest_set'])
+reversion.register(AmendmentRequest, follow=[])
+reversion.register(ProposalDeclinedDetails, follow=[])
+reversion.register(ProposalStandardRequirement, follow=['proposalrequirement_set'])
+reversion.register(ProposalUserAction, follow=[])
+reversion.register(ProposalRequirement, follow=['requirement_documents', 'proposalrequirement_set', 'compliance_requirement'])
+reversion.register(HelpPage, follow=[])
 
