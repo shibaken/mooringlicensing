@@ -292,8 +292,9 @@ export default {
     },
     methods: {
         validateEmail: function(email) {
-              const re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-              return re.test(email)
+            console.log('in validateEmail')
+            const re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+            return re.test(email)
         },
         lookupDcvVessel: async function(id) {
             console.log('in lookupDcvVessel')
@@ -306,6 +307,7 @@ export default {
             }
         },
         validateRegoNo: function(data) {
+            console.log('in validateRegoNo')
             // force uppercase and no whitespace
             data = data.toUpperCase();
             data = data.replace(/\s/g,"");
@@ -314,6 +316,7 @@ export default {
         },
 
         initialiseSelects: function(){
+            console.log('in initialiseSelects')
             let vm = this;
             $(vm.$refs.dcv_vessel_rego_nos).select2({
                 minimumInputLength: 2,
@@ -376,6 +379,7 @@ export default {
                         vessel_name: '',
                     }
                 );
+                $(vm.$refs.dcv_vessel_rego_nos).empty().trigger('change')
 
                 //vm.selectedRego = ''
             }).
@@ -473,11 +477,13 @@ export default {
         },
     },
     mounted: function () {
+        console.log('in mounted')
         this.$nextTick(() => {
             this.initialiseSelects()
         });
     },
     created: async function() {
+        console.log('in created')
         const res = await this.$http.get(api_endpoints.fee_configurations)
         console.log(res.body)
         this.fee_configurations = res.body
