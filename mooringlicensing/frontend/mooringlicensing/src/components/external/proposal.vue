@@ -98,13 +98,13 @@
                                                 I agree with all the <a href="https://rottnestisland.com/boating/boating-on-rottnest-island/tandc" target="_blank">RIA Terms and Conditions</a>
                                             </label>
 
-                                            <button v-if="saveExitProposal || !terms_and_conditions_checked" type="button" class="btn btn-primary" disabled>
-                                                Save and Exit&nbsp;<i v-show="terms_and_conditions_checked" class="fa fa-circle-o-notch fa-spin fa-fw"></i>
+                                            <button v-if="saveExitProposal" type="button" class="btn btn-primary" disabled>
+                                                Save and Exit&nbsp;<i class="fa fa-circle-o-notch fa-spin fa-fw"></i>
                                             </button>
                                             <input v-else type="button" @click.prevent="save_exit" class="btn btn-primary" value="Save and Exit" :disabled="savingProposal || paySubmitting"/>
 
-                                            <button v-if="savingProposal || !terms_and_conditions_checked" type="button" class="btn btn-primary" disabled>
-                                                Save and Continue&nbsp;<i v-show="terms_and_conditions_checked" class="fa fa-circle-o-notch fa-spin fa-fw"></i>
+                                            <button v-if="savingProposal" type="button" class="btn btn-primary" disabled>
+                                                Save and Continue&nbsp;<i class="fa fa-circle-o-notch fa-spin fa-fw"></i>
                                             </button>
                                             <input v-else type="button" @click.prevent="save" class="btn btn-primary" value="Save and Continue" :disabled="saveExitProposal || paySubmitting"/>
 
