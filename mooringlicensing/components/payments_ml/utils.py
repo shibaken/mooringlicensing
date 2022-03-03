@@ -18,6 +18,7 @@ from mooringlicensing.components.payments_ml.models import ApplicationFee, FeeCo
 #test
 from mooringlicensing.components.proposals.models import Proposal, AuthorisedUserApplication, MooringLicenceApplication, \
     AnnualAdmissionApplication, ProposalType
+from mooringlicensing.components.main.decorators import query_debugger
 
 logger = logging.getLogger('mooringlicensing')
 
