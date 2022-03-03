@@ -1,5 +1,4 @@
 from __future__ import unicode_literals
-from mooringlicensing.components.main.decorators import query_debugger
 
 import json
 import datetime
@@ -397,9 +396,7 @@ class Proposal(DirtyFieldsMixin, RevisionedMixin):
 
         self.save()
 
-    @query_debugger
     def save(self, *args, **kwargs):
-        print(self.__class__.__name__)
         super(Proposal, self).save(*args,**kwargs)
         if type(self) == Proposal:
             self.child_obj.refresh_from_db()
@@ -1794,9 +1791,7 @@ class WaitingListApplication(Proposal):
     def is_approver(self, user):
         return False
 
-    @query_debugger
     def save(self, *args, **kwargs):
-        print(self.__class__.__name__)
         super(WaitingListApplication, self).save(*args, **kwargs)
         if self.lodgement_number == '':
             new_lodgment_id = '{1}{0:06d}'.format(self.proposal_id, self.prefix)
@@ -3727,7 +3722,7 @@ reversion.register(ProposalDocument, follow=['approval_level_document'])
 reversion.register(RequirementDocument, follow=[])
 reversion.register(ProposalType, follow=['proposal_set', 'feeitem_set'])
 # reversion.register(Proposal, follow=['documents', 'succeeding_proposals', 'comms_logs', 'companyownership_set', 'insurance_certificate_documents', 'hull_identification_number_documents', 'electoral_roll_documents', 'mooring_report_documents', 'written_proof_documents', 'signed_licence_agreement_documents', 'proof_of_identity_documents', 'proposalrequest_set', 'proposaldeclineddetails_set', 'action_logs', 'requirements', 'application_fees', 'approval_history_records', 'approvals', 'sticker_set', 'compliances'])
-# reversion.register(Proposal, follow=['documents', 'succeeding_proposals', 'comms_logs', 'companyownership_set', 'insurance_certificate_documents', 'hull_identification_number_documents', 'electoral_roll_documents', 'mooring_report_documents', 'written_proof_documents', 'signed_licence_agreement_documents', 'proof_of_identity_documents', 'proposalrequest_set', 'proposaldeclineddetails', 'action_logs', 'requirements', 'application_fees', 'approval_history_records', 'approvals', 'sticker_set', 'compliances'])
+reversion.register(Proposal, follow=['documents', 'succeeding_proposals', 'comms_logs', 'companyownership_set', 'insurance_certificate_documents', 'hull_identification_number_documents', 'electoral_roll_documents', 'mooring_report_documents', 'written_proof_documents', 'signed_licence_agreement_documents', 'proof_of_identity_documents', 'proposalrequest_set', 'proposaldeclineddetails', 'action_logs', 'requirements', 'application_fees', 'approval_history_records', 'approvals', 'sticker_set', 'compliances'])
 reversion.register(StickerPrintingContact, follow=[])
 reversion.register(StickerPrintingBatch, follow=['sticker_set'])
 reversion.register(StickerPrintingResponseEmail, follow=['stickerprintingresponse_set'])
