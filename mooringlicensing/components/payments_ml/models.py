@@ -17,6 +17,7 @@ from mooringlicensing.components.main.models import ApplicationType, VesselSizeC
 from mooringlicensing.components.proposals.models import ProposalType, AnnualAdmissionApplication, \
     AuthorisedUserApplication, VesselDetails
 from smart_selects.db_fields import ChainedForeignKey
+from mooringlicensing.components.main.decorators import query_debugger
 
 logger = logging.getLogger('__name__')
 
@@ -206,6 +207,11 @@ class ApplicationFee(Payment):
         if self.fee_items.count():
             return self.fee_items.first().fee_constructor
         return None
+
+    @query_debugger
+    def save(self, **kwargs):
+        print(self.__class__.__name__)
+        super(ApplicationFee, self).save(**kwargs)
 
     class Meta:
         app_label = 'mooringlicensing'
