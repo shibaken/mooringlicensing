@@ -1266,9 +1266,12 @@ class Proposal(DirtyFieldsMixin, RevisionedMixin):
                     approval, created = self.child_obj.update_or_create_approval(datetime.datetime.now(pytz.timezone(TIME_ZONE)))
 
                 return self
-
-            except:
-                raise
+            except Exception as e:
+                print(e)
+                msg = 'final_approval_for_AUA_MLA. lodgement number {}, error: {}'.format(self.lodgement_number, str(e))
+                logger.error(msg)
+                logger.error(traceback.print_exc())
+                raise e
 
     def final_approval(self, request=None, details=None):
         if self.child_obj.code in (WaitingListApplication.code, AnnualAdmissionApplication.code):
