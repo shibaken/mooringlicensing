@@ -3687,6 +3687,7 @@ reversion.register(RequirementDocument, follow=[])
 reversion.register(ProposalType, follow=['proposal_set', 'feeitem_set'])
 # TODO: fix this to improve performance
 #reversion.register(Proposal, follow=['documents', 'succeeding_proposals', 'comms_logs', 'companyownership_set', 'insurance_certificate_documents', 'hull_identification_number_documents', 'electoral_roll_documents', 'mooring_report_documents', 'written_proof_documents', 'signed_licence_agreement_documents', 'proof_of_identity_documents', 'proposalrequest_set', 'proposaldeclineddetails', 'action_logs', 'requirements', 'application_fees', 'approval_history_records', 'approvals', 'sticker_set', 'compliances'])
+reversion.register(Proposal)
 reversion.register(StickerPrintingContact, follow=[])
 reversion.register(StickerPrintingBatch, follow=['sticker_set'])
 reversion.register(StickerPrintingResponseEmail, follow=['stickerprintingresponse_set'])
