@@ -2891,7 +2891,7 @@ class Mooring(RevisionedMixin):
             for proposal in proposals:
                 if proposal.child_obj.code == 'mla':
                     status = 'Licence Application'
-        return status if status else 'Unlicenced'
+        return status if status else 'Unlicensed'
 
     def suitable_vessel(self, vessel_details):
         suitable = True
