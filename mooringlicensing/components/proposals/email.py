@@ -585,6 +585,7 @@ def send_expire_mla_notification_to_assessor(proposal, reason, due_date):
         'applicant': proposal.submitter,
         'due_date': due_date,
         'mooring_name': mooring_name,
+        'recipient': proposal.submitter
     }
 
     to_address = proposal.assessor_recipients
@@ -1138,8 +1139,10 @@ def send_au_summary_to_ml_holder(approval, request):
             attachment = (file_name, au_summary_document.file.read(), 'application/pdf')
             attachments.append(attachment)
 
+    proposal = approval.current_proposal
     context = {
         'approval': approval,
+        'recipient': proposal.submitter,
     }
 
     to_address = approval.submitter.email
