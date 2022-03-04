@@ -1234,42 +1234,49 @@ class MooringLicence(Approval):
         return context
 
     def get_context_for_licence_permit(self):
-        # Return context for the licence/permit document
-        licenced_vessel = None
-        additional_vessels = []
+        try:
+            logger.info("self.issue_date: {}".format(self.issue_date))
+            logger.info("self.expiry_date: {}".format(self.expiry_date))
+            # Return context for the licence/permit document
+            licenced_vessel = None
+            additional_vessels = []
 
-        max_vessel_length = 0
-        for vessel in self.current_vessels:
-            v = {}
-            v['vessel_rego_no'] = vessel['rego_no']
-            v['vessel_name'] = vessel['latest_vessel_details'].vessel_name
-            v['vessel_length'] = vessel['latest_vessel_details'].vessel_applicable_length
-            v['vessel_draft'] = vessel['latest_vessel_details'].vessel_draft
-            if not licenced_vessel:
-                # No licenced vessel stored yet
-                licenced_vessel = v
-            else:
-                if licenced_vessel['vessel_length'] < v['vessel_length']:
-                    # Found a larger vessel than the one stored as a licenced.  Replace it by the larger one.
-                    additional_vessels.append(licenced_vessel)
+            max_vessel_length = 0
+            for vessel in self.current_vessels:
+                v = {}
+                v['vessel_rego_no'] = vessel['rego_no']
+                v['vessel_name'] = vessel['latest_vessel_details'].vessel_name
+                v['vessel_length'] = vessel['latest_vessel_details'].vessel_applicable_length
+                v['vessel_draft'] = vessel['latest_vessel_details'].vessel_draft
+                if not licenced_vessel:
+                    # No licenced vessel stored yet
                     licenced_vessel = v
+                else:
+                    if licenced_vessel['vessel_length'] < v['vessel_length']:
+                        # Found a larger vessel than the one stored as a licenced.  Replace it by the larger one.
+                        additional_vessels.append(licenced_vessel)
+                        licenced_vessel = v
 
-        context = {
-            'approval': self,
-            'application': self.current_proposal,
-            'issue_date': self.issue_date.strftime('%d/%m/%Y'),
-            'applicant_name': self.submitter.get_full_name(),
-            'p_address_line1': self.postal_address_line1,
-            'p_address_line2': self.postal_address_line2,
-            'p_address_suburb': self.postal_address_suburb,
-            'p_address_state': self.postal_address_state,
-            'p_address_postcode': self.postal_address_postcode,
-            'licenced_vessel': licenced_vessel,  # vessel_rego_no, vessel_name, vessel_length, vessel_draft
-            'additional_vessels': additional_vessels,
-            'mooring': self.mooring,
-            'expiry_date': self.expiry_date.strftime('%d/%m/%Y')
-        }
-        return context
+            context = {
+                'approval': self,
+                'application': self.current_proposal,
+                'issue_date': self.issue_date.strftime('%d/%m/%Y'),
+                'applicant_name': self.submitter.get_full_name(),
+                'p_address_line1': self.postal_address_line1,
+                'p_address_line2': self.postal_address_line2,
+                'p_address_suburb': self.postal_address_suburb,
+                'p_address_state': self.postal_address_state,
+                'p_address_postcode': self.postal_address_postcode,
+                'licenced_vessel': licenced_vessel,  # vessel_rego_no, vessel_name, vessel_length, vessel_draft
+                'additional_vessels': additional_vessels,
+                'mooring': self.mooring,
+                'expiry_date': self.expiry_date.strftime('%d/%m/%Y')
+            }
+            return context
+        except Exception as e:
+            logger.error("get_context_for_licence_permit")
+            logger.error(e)
+            raise e
 
     def save(self, *args, **kwargs):
         if self.lodgement_number == '':
@@ -2103,32 +2110,32 @@ def delete_documents(sender, instance, *args, **kwargs):
 
 
 import reversion
-reversion.register(WaitingListOfferDocument, follow=[])
-reversion.register(RenewalDocument, follow=['renewal_document'])
-reversion.register(AuthorisedUserSummaryDocument, follow=['approvals'])
-reversion.register(ApprovalDocument, follow=['approvalhistory_set', 'licence_document', 'cover_letter_document'])
-reversion.register(MooringOnApproval, follow=['approval', 'mooring', 'sticker'])
-reversion.register(VesselOwnershipOnApproval, follow=['approval', 'vessel_ownership'])
-reversion.register(ApprovalHistory, follow=[])
-reversion.register(Approval, follow=['proposal_set', 'ria_generated_proposal', 'waiting_list_offer_documents', 'renewal_documents', 'authorised_user_summary_documents', 'documents', 'mooringonapproval_set', 'vesselownershiponapproval_set', 'approvalhistory_set', 'replace', 'comms_logs', 'action_logs', 'stickers', 'compliances'])
-reversion.register(WaitingListAllocation, follow=['proposal_set', 'ria_generated_proposal', 'waiting_list_offer_documents', 'renewal_documents', 'authorised_user_summary_documents', 'documents', 'mooringonapproval_set', 'vesselownershiponapproval_set', 'approvalhistory_set', 'replace', 'comms_logs', 'action_logs', 'stickers', 'compliances'])
-reversion.register(AnnualAdmissionPermit, follow=['proposal_set', 'ria_generated_proposal', 'waiting_list_offer_documents', 'renewal_documents', 'authorised_user_summary_documents', 'documents', 'mooringonapproval_set', 'vesselownershiponapproval_set', 'approvalhistory_set', 'replace', 'comms_logs', 'action_logs', 'stickers', 'compliances'])
-reversion.register(AuthorisedUserPermit, follow=['proposal_set', 'ria_generated_proposal', 'waiting_list_offer_documents', 'renewal_documents', 'authorised_user_summary_documents', 'documents', 'mooringonapproval_set', 'vesselownershiponapproval_set', 'approvalhistory_set', 'replace', 'comms_logs', 'action_logs', 'stickers', 'compliances'])
-reversion.register(MooringLicence, follow=['proposal_set', 'ria_generated_proposal', 'waiting_list_offer_documents', 'renewal_documents', 'authorised_user_summary_documents', 'documents', 'mooringonapproval_set', 'vesselownershiponapproval_set', 'approvalhistory_set', 'replace', 'comms_logs', 'action_logs', 'stickers', 'compliances', 'mooring'])
-reversion.register(PreviewTempApproval, follow=['proposal_set', 'ria_generated_proposal', 'waiting_list_offer_documents', 'renewal_documents', 'authorised_user_summary_documents', 'documents', 'mooringonapproval_set', 'vesselownershiponapproval_set', 'approvalhistory_set', 'replace', 'comms_logs', 'action_logs', 'stickers', 'compliances'])
-reversion.register(ApprovalLogEntry, follow=['documents'])
-reversion.register(ApprovalLogDocument, follow=[])
-reversion.register(ApprovalUserAction, follow=[])
-reversion.register(DcvOrganisation, follow=['dcvvessel_set', 'dcvpermit_set'])
-reversion.register(DcvVessel, follow=['dcv_admissions', 'dcv_permits'])
-reversion.register(DcvAdmission, follow=['dcv_admission_fees', 'dcv_admission_arrivals', 'admissions'])
-reversion.register(DcvAdmissionArrival, follow=['numberofpeople_set'])
-reversion.register(AgeGroup, follow=['feeitem_set', 'numberofpeople_set'])
-reversion.register(AdmissionType, follow=['feeitem_set', 'numberofpeople_set'])
-reversion.register(NumberOfPeople, follow=[])
-reversion.register(DcvPermit, follow=['dcv_permit_fees', 'permits', 'stickers'])
-reversion.register(DcvAdmissionDocument, follow=[])
-reversion.register(DcvPermitDocument, follow=[])
-reversion.register(Sticker, follow=['mooringonapproval_set', 'approvalhistory_set', 'sticker_action_details'])
-reversion.register(StickerActionDetail, follow=[])
+#reversion.register(WaitingListOfferDocument, follow=[])
+#reversion.register(RenewalDocument, follow=['renewal_document'])
+#reversion.register(AuthorisedUserSummaryDocument, follow=['approvals'])
+#reversion.register(ApprovalDocument, follow=['approvalhistory_set', 'licence_document', 'cover_letter_document'])
+#reversion.register(MooringOnApproval, follow=['approval', 'mooring', 'sticker'])
+#reversion.register(VesselOwnershipOnApproval, follow=['approval', 'vessel_ownership'])
+#reversion.register(ApprovalHistory, follow=[])
+#reversion.register(Approval, follow=['proposal_set', 'ria_generated_proposal', 'waiting_list_offer_documents', 'renewal_documents', 'authorised_user_summary_documents', 'documents', 'mooringonapproval_set', 'vesselownershiponapproval_set', 'approvalhistory_set', 'replace', 'comms_logs', 'action_logs', 'stickers', 'compliances'])
+#reversion.register(WaitingListAllocation, follow=['proposal_set', 'ria_generated_proposal', 'waiting_list_offer_documents', 'renewal_documents', 'authorised_user_summary_documents', 'documents', 'mooringonapproval_set', 'vesselownershiponapproval_set', 'approvalhistory_set', 'replace', 'comms_logs', 'action_logs', 'stickers', 'compliances'])
+#reversion.register(AnnualAdmissionPermit, follow=['proposal_set', 'ria_generated_proposal', 'waiting_list_offer_documents', 'renewal_documents', 'authorised_user_summary_documents', 'documents', 'mooringonapproval_set', 'vesselownershiponapproval_set', 'approvalhistory_set', 'replace', 'comms_logs', 'action_logs', 'stickers', 'compliances'])
+#reversion.register(AuthorisedUserPermit, follow=['proposal_set', 'ria_generated_proposal', 'waiting_list_offer_documents', 'renewal_documents', 'authorised_user_summary_documents', 'documents', 'mooringonapproval_set', 'vesselownershiponapproval_set', 'approvalhistory_set', 'replace', 'comms_logs', 'action_logs', 'stickers', 'compliances'])
+#reversion.register(MooringLicence, follow=['proposal_set', 'ria_generated_proposal', 'waiting_list_offer_documents', 'renewal_documents', 'authorised_user_summary_documents', 'documents', 'mooringonapproval_set', 'vesselownershiponapproval_set', 'approvalhistory_set', 'replace', 'comms_logs', 'action_logs', 'stickers', 'compliances', 'mooring'])
+#reversion.register(PreviewTempApproval, follow=['proposal_set', 'ria_generated_proposal', 'waiting_list_offer_documents', 'renewal_documents', 'authorised_user_summary_documents', 'documents', 'mooringonapproval_set', 'vesselownershiponapproval_set', 'approvalhistory_set', 'replace', 'comms_logs', 'action_logs', 'stickers', 'compliances'])
+#reversion.register(ApprovalLogEntry, follow=['documents'])
+#reversion.register(ApprovalLogDocument, follow=[])
+#reversion.register(ApprovalUserAction, follow=[])
+#reversion.register(DcvOrganisation, follow=['dcvvessel_set', 'dcvpermit_set'])
+#reversion.register(DcvVessel, follow=['dcv_admissions', 'dcv_permits'])
+#reversion.register(DcvAdmission, follow=['dcv_admission_fees', 'dcv_admission_arrivals', 'admissions'])
+#reversion.register(DcvAdmissionArrival, follow=['numberofpeople_set'])
+#reversion.register(AgeGroup, follow=['feeitem_set', 'numberofpeople_set'])
+#reversion.register(AdmissionType, follow=['feeitem_set', 'numberofpeople_set'])
+#reversion.register(NumberOfPeople, follow=[])
+#reversion.register(DcvPermit, follow=['dcv_permit_fees', 'permits', 'stickers'])
+#reversion.register(DcvAdmissionDocument, follow=[])
+#reversion.register(DcvPermitDocument, follow=[])
+#reversion.register(Sticker, follow=['mooringonapproval_set', 'approvalhistory_set', 'sticker_action_details'])
+#reversion.register(StickerActionDetail, follow=[])
 
