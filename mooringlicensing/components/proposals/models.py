@@ -397,7 +397,6 @@ class Proposal(DirtyFieldsMixin, RevisionedMixin):
 
         self.save()
     
-    @query_debugger
     def save(self, *args, **kwargs):
         super(Proposal, self).save(*args,**kwargs)
         if type(self) == Proposal:
