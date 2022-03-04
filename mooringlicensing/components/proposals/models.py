@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 import json
 import datetime
 from _pydecimal import Decimal
+import traceback
 
 import pytz
 import uuid
@@ -2750,6 +2751,7 @@ class MooringLicenceApplication(Proposal):
             print(e)
             msg = 'Payment taken for Proposal: {}, but approval creation has failed\n{}'.format(self.lodgement_number, str(e))
             logger.error(msg)
+            logger.error(traceback.print_exc())
             raise e
 
     @property
