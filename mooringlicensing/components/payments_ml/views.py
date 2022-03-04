@@ -36,7 +36,6 @@ from mooringlicensing.components.proposals.models import Proposal, ProposalUserA
     AuthorisedUserApplication, MooringLicenceApplication, WaitingListApplication, AnnualAdmissionApplication, \
     VesselDetails
 from mooringlicensing.settings import PROPOSAL_TYPE_AMENDMENT, PROPOSAL_TYPE_RENEWAL, PAYMENT_SYSTEM_PREFIX
-from mooringlicensing.components.main.decorators import query_debugger
 
 logger = logging.getLogger('mooringlicensing')
 
@@ -590,7 +589,7 @@ class ApplicationFeeSuccessView(TemplateView):
             if 'fee_item_id' in db_operations:
                 fee_items = FeeItem.objects.filter(id=db_operations['fee_item_id'])
                 if fee_items:
-                    FeeItemApplicationFee.objects.create(  # <---
+                    FeeItemApplicationFee.objects.create(
                         fee_item=fee_items.first(),
                         application_fee=application_fee,
                         vessel_details=proposal.vessel_details,
@@ -615,7 +614,7 @@ class ApplicationFeeSuccessView(TemplateView):
                     )
 
             application_fee.invoice_reference = invoice_ref
-            application_fee.save()  # <---
+            application_fee.save()
 
             if application_fee.payment_type == ApplicationFee.PAYMENT_TYPE_TEMPORARY:
                 try:
@@ -649,7 +648,7 @@ class ApplicationFeeSuccessView(TemplateView):
                             ret1 = proposal.child_obj.send_emails_after_payment_success(request)
                             if not ret1:
                                 raise ValidationError('An error occurred while submitting proposal (Submit email notifications failed)')
-                            proposal.save()  # <---
+                            proposal.save()
 
                         proposal.processing_status = Proposal.PROCESSING_STATUS_WITH_ASSESSOR
                         proposal.customer_status = Proposal.CUSTOMER_STATUS_WITH_ASSESSOR
