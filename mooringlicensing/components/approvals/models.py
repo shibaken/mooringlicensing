@@ -1234,42 +1234,49 @@ class MooringLicence(Approval):
         return context
 
     def get_context_for_licence_permit(self):
-        # Return context for the licence/permit document
-        licenced_vessel = None
-        additional_vessels = []
+        try:
+            logger.info("self.issue_date: {}".format(self.issue_date))
+            logger.info("self.expiry_date: {}".format(self.expiry_date))
+            # Return context for the licence/permit document
+            licenced_vessel = None
+            additional_vessels = []
 
-        max_vessel_length = 0
-        for vessel in self.current_vessels:
-            v = {}
-            v['vessel_rego_no'] = vessel['rego_no']
-            v['vessel_name'] = vessel['latest_vessel_details'].vessel_name
-            v['vessel_length'] = vessel['latest_vessel_details'].vessel_applicable_length
-            v['vessel_draft'] = vessel['latest_vessel_details'].vessel_draft
-            if not licenced_vessel:
-                # No licenced vessel stored yet
-                licenced_vessel = v
-            else:
-                if licenced_vessel['vessel_length'] < v['vessel_length']:
-                    # Found a larger vessel than the one stored as a licenced.  Replace it by the larger one.
-                    additional_vessels.append(licenced_vessel)
+            max_vessel_length = 0
+            for vessel in self.current_vessels:
+                v = {}
+                v['vessel_rego_no'] = vessel['rego_no']
+                v['vessel_name'] = vessel['latest_vessel_details'].vessel_name
+                v['vessel_length'] = vessel['latest_vessel_details'].vessel_applicable_length
+                v['vessel_draft'] = vessel['latest_vessel_details'].vessel_draft
+                if not licenced_vessel:
+                    # No licenced vessel stored yet
                     licenced_vessel = v
+                else:
+                    if licenced_vessel['vessel_length'] < v['vessel_length']:
+                        # Found a larger vessel than the one stored as a licenced.  Replace it by the larger one.
+                        additional_vessels.append(licenced_vessel)
+                        licenced_vessel = v
 
-        context = {
-            'approval': self,
-            'application': self.current_proposal,
-            'issue_date': self.issue_date.strftime('%d/%m/%Y'),
-            'applicant_name': self.submitter.get_full_name(),
-            'p_address_line1': self.postal_address_line1,
-            'p_address_line2': self.postal_address_line2,
-            'p_address_suburb': self.postal_address_suburb,
-            'p_address_state': self.postal_address_state,
-            'p_address_postcode': self.postal_address_postcode,
-            'licenced_vessel': licenced_vessel,  # vessel_rego_no, vessel_name, vessel_length, vessel_draft
-            'additional_vessels': additional_vessels,
-            'mooring': self.mooring,
-            'expiry_date': self.expiry_date.strftime('%d/%m/%Y')
-        }
-        return context
+            context = {
+                'approval': self,
+                'application': self.current_proposal,
+                'issue_date': self.issue_date.strftime('%d/%m/%Y'),
+                'applicant_name': self.submitter.get_full_name(),
+                'p_address_line1': self.postal_address_line1,
+                'p_address_line2': self.postal_address_line2,
+                'p_address_suburb': self.postal_address_suburb,
+                'p_address_state': self.postal_address_state,
+                'p_address_postcode': self.postal_address_postcode,
+                'licenced_vessel': licenced_vessel,  # vessel_rego_no, vessel_name, vessel_length, vessel_draft
+                'additional_vessels': additional_vessels,
+                'mooring': self.mooring,
+                'expiry_date': self.expiry_date.strftime('%d/%m/%Y')
+            }
+            return context
+        except Exception as e:
+            logger.error("get_context_for_licence_permit")
+            logger.error(e)
+            raise e
 
     def save(self, *args, **kwargs):
         if self.lodgement_number == '':
