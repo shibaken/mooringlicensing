@@ -451,13 +451,15 @@ class Proposal(DirtyFieldsMixin, RevisionedMixin):
             return datetime.datetime(2021,11,30).date()
 
         if self.application_fees.count() < 1:
-            return None
+            #return None
+            raise ValidationError('proposals/models.py ln 455. End date set to null.')
         elif self.application_fees.count() == 1:
             application_fee = self.application_fees.first()
             if application_fee.fee_constructor:
                 return application_fee.fee_constructor.end_date
             else:
-                return None
+                raise ValidationError('proposals/models.py ln 461. End date set to null.')
+                #return None
         else:
             logger.error('Proposal: {} has {} ApplicationFees.  There should be 0 or 1.'.format(self, self.application_fees.count()))
             raise ValidationError('Proposal: {} has {} ApplicationFees.  There should be 0 or 1.'.format(self, self.application_fees.count()))
