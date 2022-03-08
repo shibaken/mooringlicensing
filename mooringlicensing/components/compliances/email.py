@@ -10,6 +10,8 @@ from ledger.accounts.models import EmailUser
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 
+from mooringlicensing.components.emails.utils import get_public_url
+
 logger = logging.getLogger(__name__)
 
 SYSTEM_NAME = settings.SYSTEM_NAME_SHORT + ' Automated Message'
@@ -75,7 +77,8 @@ def send_amendment_email_notification(amendment_request, request, compliance, is
         'compliance': compliance,
         'reason': reason,
         'amendment_request_text': amendment_request.text,
-        'url': url
+        'url': url,
+        'public_url': get_public_url(request),
     }
 
     submitter = compliance.submitter.email if compliance.submitter and compliance.submitter.email else compliance.proposal.submitter.email
@@ -107,7 +110,8 @@ def send_reminder_email_notification(compliance, is_test=False):
     context = {
         'compliance': compliance,
         'url': url,
-        'login_url': login_url
+        'login_url': login_url,
+        'public_url': get_public_url(),
     }
 
     submitter = compliance.submitter.email if compliance.submitter and compliance.submitter.email else compliance.proposal.submitter.email
@@ -141,7 +145,8 @@ def send_internal_reminder_email_notification(compliance, is_test=False):
 
     context = {
         'compliance': compliance,
-        'url': url
+        'url': url,
+        'public_url': get_public_url(),
     }
 
     msg = email.send(compliance.proposal.assessor_recipients, context=context)
@@ -166,7 +171,8 @@ def send_due_email_notification(compliance, is_test=False):
     url+=reverse('external-compliance-detail',kwargs={'compliance_pk': compliance.id})
     context = {
         'compliance': compliance,
-        'url': url
+        'url': url,
+        'public_url': get_public_url(),
     }
 
     submitter = compliance.submitter.email if compliance.submitter and compliance.submitter.email else compliance.proposal.submitter.email
@@ -201,7 +207,8 @@ def send_internal_due_email_notification(compliance, is_test=False):
 
     context = {
         'compliance': compliance,
-        'url': url
+        'url': url,
+        'public_url': get_public_url(),
     }
 
     msg = email.send(compliance.proposal.assessor_recipients, context=context)
@@ -224,7 +231,8 @@ def send_compliance_accept_email_notification(compliance,request, is_test=False)
     email = ComplianceAcceptNotificationEmail()
 
     context = {
-        'compliance': compliance
+        'compliance': compliance,
+        'public_url': get_public_url(request),
     }
     submitter = compliance.submitter.email if compliance.submitter and compliance.submitter.email else compliance.proposal.submitter.email
     all_ccs = []
@@ -252,7 +260,8 @@ def send_external_submit_email_notification(request, compliance, is_test=False):
     context = {
         'compliance': compliance,
         'submitter': submitter.get_full_name(),
-        'url': url
+        'url': url,
+        'public_url': get_public_url(request),
     }
     all_ccs = []
     if compliance.proposal.org_applicant and compliance.proposal.org_applicant.email:
@@ -280,7 +289,8 @@ def send_submit_email_notification(request, compliance, is_test=False):
 
     context = {
         'compliance': compliance,
-        'url': url
+        'url': url,
+        'public_url': get_public_url(request),
     }
 
     msg = email.send(compliance.proposal.assessor_recipients, context=context)

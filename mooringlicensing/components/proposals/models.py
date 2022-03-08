@@ -398,6 +398,7 @@ class Proposal(DirtyFieldsMixin, RevisionedMixin):
         self.save()
     
     def save(self, *args, **kwargs):
+        kwargs['no_revision'] = True
         super(Proposal, self).save(*args,**kwargs)
         if type(self) == Proposal:
             self.child_obj.refresh_from_db()
@@ -2893,7 +2894,7 @@ class Mooring(RevisionedMixin):
             for proposal in proposals:
                 if proposal.child_obj.code == 'mla':
                     status = 'Licence Application'
-        return status if status else 'Unlicenced'
+        return status if status else 'Unlicensed'
 
     def suitable_vessel(self, vessel_details):
         suitable = True
