@@ -59,7 +59,9 @@ export default {
         label:String,
         id:String,
         fileTypes:{
-            default:function () {
+            type: String,
+            required: false,
+            default: function () {
                 var file_types = 
                     "image/*," + 
                     "video/*," +
@@ -68,6 +70,7 @@ export default {
                     "application/x-7z-compressed,application/x-bzip,application/x-bzip2,application/zip," + 
                     ".dbf,.gdb,.gpx,.prj,.shp,.shx," + 
                     ".json,.kml,.gpx";
+                file_types = ''
                 return file_types;
             }
         },

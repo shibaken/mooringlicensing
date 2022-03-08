@@ -118,6 +118,7 @@ class MooringOnApproval(RevisionedMixin):
         if existing_ria_moorings >= 2 and not self.site_licensee:
             raise ValidationError('Maximum of two RIA selected moorings allowed per Authorised User Permit')
 
+        kwargs['no_revision'] = True
         super(MooringOnApproval, self).save(*args,**kwargs)
 
     class Meta:
@@ -516,6 +517,7 @@ class Approval(RevisionedMixin):
         return max(ids) + 1 if ids else 1
 
     def save(self, *args, **kwargs):
+        kwargs['no_revision'] = True
         super(Approval, self).save(*args, **kwargs)
         self.child_obj.refresh_from_db()
         if type(self.child_obj) == MooringLicence and self.status in ['expired', 'cancelled', 'surrendered']:
@@ -898,6 +900,7 @@ class WaitingListAllocation(Approval):
     def save(self, *args, **kwargs):
         if self.lodgement_number == '':
             self.lodgement_number = self.prefix + '{0:06d}'.format(self.next_id)
+        kwargs['no_revision'] = True
         super(Approval, self).save(*args, **kwargs)
 
     def manage_stickers(self, proposal):
@@ -942,6 +945,7 @@ class AnnualAdmissionPermit(Approval):
     def save(self, *args, **kwargs):
         if self.lodgement_number == '':
             self.lodgement_number = self.prefix + '{0:06d}'.format(self.next_id)
+        kwargs['no_revision'] = True
         super(Approval, self).save(*args, **kwargs)
 
     def manage_stickers(self, proposal):
@@ -1008,10 +1012,10 @@ class AuthorisedUserPermit(Approval):
             m = {}
             # calculate phone number(s)
             numbers = []
-            if mooring.mooring_licence.submitter.phone_number:
-                numbers.append(mooring.mooring_licence.submitter.phone_number)
             if mooring.mooring_licence.submitter.mobile_number:
                 numbers.append(mooring.mooring_licence.submitter.mobile_number)
+            elif mooring.mooring_licence.submitter.phone_number:
+                numbers.append(mooring.mooring_licence.submitter.phone_number)
             m['name'] = mooring.name
             m['licensee_full_name'] = mooring.mooring_licence.submitter.get_full_name()
             m['licensee_email'] = mooring.mooring_licence.submitter.email
@@ -1040,6 +1044,7 @@ class AuthorisedUserPermit(Approval):
     def save(self, *args, **kwargs):
         if self.lodgement_number == '':
             self.lodgement_number = self.prefix + '{0:06d}'.format(self.next_id)
+        kwargs['no_revision'] = True
         super(Approval, self).save(*args, **kwargs)
 
     def internal_reissue(self):
@@ -1281,6 +1286,7 @@ class MooringLicence(Approval):
     def save(self, *args, **kwargs):
         if self.lodgement_number == '':
             self.lodgement_number = self.prefix + '{0:06d}'.format(self.next_id)
+        kwargs['no_revision'] = True
         super(Approval, self).save(*args, **kwargs)
 
     def internal_reissue(self):
@@ -1589,7 +1595,7 @@ class DcvAdmissionArrival(RevisionedMixin):
         return '{} ({}-{})'.format(self.dcv_admission, self.arrival_date, self.departure_date)
 
     def get_summary(self):
-        summary_dict = {'arrival_date': self.arrival_date, 'departure_date': self.departure_date}
+        summary_dict = {'arrival_date': self.arrival_date.strftime('%d/%m/%Y') if self.arrival_date else '', 'departure_date': self.departure_date.strftime('%d/%m/%Y') if self.departure_date else ''}
         for age_group_choice in AgeGroup.NAME_CHOICES:
             age_group = AgeGroup.objects.get(code=age_group_choice[0])
             dict_type = {}
@@ -2139,4 +2145,3 @@ reversion.register(DcvAdmissionDocument, follow=[])
 reversion.register(DcvPermitDocument, follow=[])
 reversion.register(Sticker, follow=['mooringonapproval_set', 'approvalhistory_set', 'sticker_action_details'])
 reversion.register(StickerActionDetail, follow=[])
-
