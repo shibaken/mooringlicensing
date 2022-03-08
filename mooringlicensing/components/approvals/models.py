@@ -1595,7 +1595,7 @@ class DcvAdmissionArrival(RevisionedMixin):
         return '{} ({}-{})'.format(self.dcv_admission, self.arrival_date, self.departure_date)
 
     def get_summary(self):
-        summary_dict = {'arrival_date': self.arrival_date, 'departure_date': self.departure_date}
+        summary_dict = {'arrival_date': self.arrival_date.strftime('%d/%m/%Y') if self.arrival_date else '', 'departure_date': self.departure_date.strftime('%d/%m/%Y') if self.departure_date else ''}
         for age_group_choice in AgeGroup.NAME_CHOICES:
             age_group = AgeGroup.objects.get(code=age_group_choice[0])
             dict_type = {}
