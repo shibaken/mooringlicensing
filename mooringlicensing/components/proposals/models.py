@@ -451,13 +451,15 @@ class Proposal(DirtyFieldsMixin, RevisionedMixin):
             return datetime.datetime(2021,11,30).date()
 
         if self.application_fees.count() < 1:
-            return None
+            #return None
+            raise ValidationError('proposals/models.py ln 455. End date set to null.')
         elif self.application_fees.count() == 1:
             application_fee = self.application_fees.first()
             if application_fee.fee_constructor:
                 return application_fee.fee_constructor.end_date
             else:
-                return None
+                raise ValidationError('proposals/models.py ln 461. End date set to null.')
+                #return None
         else:
             logger.error('Proposal: {} has {} ApplicationFees.  There should be 0 or 1.'.format(self, self.application_fees.count()))
             raise ValidationError('Proposal: {} has {} ApplicationFees.  There should be 0 or 1.'.format(self, self.application_fees.count()))
@@ -1266,9 +1268,12 @@ class Proposal(DirtyFieldsMixin, RevisionedMixin):
                     approval, created = self.child_obj.update_or_create_approval(datetime.datetime.now(pytz.timezone(TIME_ZONE)))
 
                 return self
-
-            except:
-                raise
+            except Exception as e:
+                print(e)
+                msg = 'final_approval_for_AUA_MLA. lodgement number {}, error: {}'.format(self.lodgement_number, str(e))
+                logger.error(msg)
+                logger.error(traceback.print_exc())
+                raise e
 
     def final_approval(self, request=None, details=None):
         if self.child_obj.code in (WaitingListApplication.code, AnnualAdmissionApplication.code):
@@ -3679,49 +3684,50 @@ class HelpPage(models.Model):
 
 import reversion
 
-#reversion.register(ProposalDocument, follow=['approval_level_document'])
-#reversion.register(RequirementDocument, follow=[])
-#reversion.register(ProposalType, follow=['proposal_set', 'feeitem_set'])
+reversion.register(ProposalDocument, follow=['approval_level_document'])
+reversion.register(RequirementDocument, follow=[])
+reversion.register(ProposalType, follow=['proposal_set', 'feeitem_set'])
 # TODO: fix this to improve performance
 #reversion.register(Proposal, follow=['documents', 'succeeding_proposals', 'comms_logs', 'companyownership_set', 'insurance_certificate_documents', 'hull_identification_number_documents', 'electoral_roll_documents', 'mooring_report_documents', 'written_proof_documents', 'signed_licence_agreement_documents', 'proof_of_identity_documents', 'proposalrequest_set', 'proposaldeclineddetails', 'action_logs', 'requirements', 'application_fees', 'approval_history_records', 'approvals', 'sticker_set', 'compliances'])
-#reversion.register(StickerPrintingContact, follow=[])
-#reversion.register(StickerPrintingBatch, follow=['sticker_set'])
-#reversion.register(StickerPrintingResponseEmail, follow=['stickerprintingresponse_set'])
-#reversion.register(StickerPrintingResponse, follow=['sticker_set'])
-#reversion.register(WaitingListApplication, follow=['documents', 'succeeding_proposals', 'comms_logs', 'companyownership_set', 'insurance_certificate_documents', 'hull_identification_number_documents', 'electoral_roll_documents', 'mooring_report_documents', 'written_proof_documents', 'signed_licence_agreement_documents', 'proof_of_identity_documents', 'proposalrequest_set', 'proposaldeclineddetails', 'action_logs', 'requirements', 'application_fees', 'approval_history_records', 'approvals', 'sticker_set', 'compliances'])
-#reversion.register(AnnualAdmissionApplication, follow=['documents', 'succeeding_proposals', 'comms_logs', 'companyownership_set', 'insurance_certificate_documents', 'hull_identification_number_documents', 'electoral_roll_documents', 'mooring_report_documents', 'written_proof_documents', 'signed_licence_agreement_documents', 'proof_of_identity_documents', 'proposalrequest_set', 'proposaldeclineddetails', 'action_logs', 'requirements', 'application_fees', 'approval_history_records', 'approvals', 'sticker_set', 'compliances'])
-#reversion.register(AuthorisedUserApplication, follow=['documents', 'succeeding_proposals', 'comms_logs', 'companyownership_set', 'insurance_certificate_documents', 'hull_identification_number_documents', 'electoral_roll_documents', 'mooring_report_documents', 'written_proof_documents', 'signed_licence_agreement_documents', 'proof_of_identity_documents', 'proposalrequest_set', 'proposaldeclineddetails', 'action_logs', 'requirements', 'application_fees', 'approval_history_records', 'approvals', 'sticker_set', 'compliances'])
-#reversion.register(MooringLicenceApplication, follow=['documents', 'succeeding_proposals', 'comms_logs', 'companyownership_set', 'insurance_certificate_documents', 'hull_identification_number_documents', 'electoral_roll_documents', 'mooring_report_documents', 'written_proof_documents', 'signed_licence_agreement_documents', 'proof_of_identity_documents', 'proposalrequest_set', 'proposaldeclineddetails', 'action_logs', 'requirements', 'application_fees', 'approval_history_records', 'approvals', 'sticker_set', 'compliances'])
-#reversion.register(ProposalLogDocument, follow=[])
-#reversion.register(ProposalLogEntry, follow=['documents'])
-#reversion.register(MooringBay, follow=['proposal_set', 'mooring_set'])
-#reversion.register(Mooring, follow=['proposal_set', 'ria_generated_proposal', 'comms_logs', 'action_logs', 'mooringonapproval_set', 'approval_set'])
-#reversion.register(MooringLogDocument, follow=[])
-#reversion.register(MooringLogEntry, follow=['documents'])
-#reversion.register(MooringUserAction, follow=[])
-#reversion.register(Vessel, follow=['comms_logs', 'vesseldetails_set', 'companyownership_set', 'vesselownership_set', 'owner_set', 'company_set'])
-#reversion.register(VesselLogDocument, follow=[])
-#reversion.register(VesselLogEntry, follow=['documents'])
-#reversion.register(VesselDetails, follow=['proposal_set', 'feeitemapplicationfee_set'])
-#reversion.register(CompanyOwnership, follow=['blocking_proposal', 'vessel', 'company'])
-#reversion.register(VesselOwnership, follow=['owner', 'vessel', 'company_ownership'])
-#reversion.register(VesselRegistrationDocument, follow=[])
-#reversion.register(Owner, follow=['vesselownership_set'])
-#reversion.register(Company, follow=['companyownership_set'])
-#reversion.register(InsuranceCertificateDocument, follow=[])
-#reversion.register(HullIdentificationNumberDocument, follow=[])
-#reversion.register(ElectoralRollDocument, follow=[])
-#reversion.register(MooringReportDocument, follow=[])
-#reversion.register(WrittenProofDocument, follow=[])
-#reversion.register(SignedLicenceAgreementDocument, follow=[])
-#reversion.register(ProofOfIdentityDocument, follow=[])
-#reversion.register(ProposalRequest, follow=[])
-#reversion.register(ComplianceRequest, follow=[])
-#reversion.register(AmendmentReason, follow=['amendmentrequest_set'])
-#reversion.register(AmendmentRequest, follow=[])
-#reversion.register(ProposalDeclinedDetails, follow=[])
-#reversion.register(ProposalStandardRequirement, follow=['proposalrequirement_set'])
-#reversion.register(ProposalUserAction, follow=[])
-#reversion.register(ProposalRequirement, follow=['requirement_documents', 'proposalrequirement_set', 'compliance_requirement'])
-#reversion.register(HelpPage, follow=[])
+reversion.register(Proposal)
+reversion.register(StickerPrintingContact, follow=[])
+reversion.register(StickerPrintingBatch, follow=['sticker_set'])
+reversion.register(StickerPrintingResponseEmail, follow=['stickerprintingresponse_set'])
+reversion.register(StickerPrintingResponse, follow=['sticker_set'])
+reversion.register(WaitingListApplication, follow=['documents', 'succeeding_proposals', 'comms_logs', 'companyownership_set', 'insurance_certificate_documents', 'hull_identification_number_documents', 'electoral_roll_documents', 'mooring_report_documents', 'written_proof_documents', 'signed_licence_agreement_documents', 'proof_of_identity_documents', 'proposalrequest_set', 'proposaldeclineddetails', 'action_logs', 'requirements', 'application_fees', 'approval_history_records', 'approvals', 'sticker_set', 'compliances'])
+reversion.register(AnnualAdmissionApplication, follow=['documents', 'succeeding_proposals', 'comms_logs', 'companyownership_set', 'insurance_certificate_documents', 'hull_identification_number_documents', 'electoral_roll_documents', 'mooring_report_documents', 'written_proof_documents', 'signed_licence_agreement_documents', 'proof_of_identity_documents', 'proposalrequest_set', 'proposaldeclineddetails', 'action_logs', 'requirements', 'application_fees', 'approval_history_records', 'approvals', 'sticker_set', 'compliances'])
+reversion.register(AuthorisedUserApplication, follow=['documents', 'succeeding_proposals', 'comms_logs', 'companyownership_set', 'insurance_certificate_documents', 'hull_identification_number_documents', 'electoral_roll_documents', 'mooring_report_documents', 'written_proof_documents', 'signed_licence_agreement_documents', 'proof_of_identity_documents', 'proposalrequest_set', 'proposaldeclineddetails', 'action_logs', 'requirements', 'application_fees', 'approval_history_records', 'approvals', 'sticker_set', 'compliances'])
+reversion.register(MooringLicenceApplication, follow=['documents', 'succeeding_proposals', 'comms_logs', 'companyownership_set', 'insurance_certificate_documents', 'hull_identification_number_documents', 'electoral_roll_documents', 'mooring_report_documents', 'written_proof_documents', 'signed_licence_agreement_documents', 'proof_of_identity_documents', 'proposalrequest_set', 'proposaldeclineddetails', 'action_logs', 'requirements', 'application_fees', 'approval_history_records', 'approvals', 'sticker_set', 'compliances'])
+reversion.register(ProposalLogDocument, follow=[])
+reversion.register(ProposalLogEntry, follow=['documents'])
+reversion.register(MooringBay, follow=['proposal_set', 'mooring_set'])
+reversion.register(Mooring, follow=['proposal_set', 'ria_generated_proposal', 'comms_logs', 'action_logs', 'mooringonapproval_set', 'approval_set'])
+reversion.register(MooringLogDocument, follow=[])
+reversion.register(MooringLogEntry, follow=['documents'])
+reversion.register(MooringUserAction, follow=[])
+reversion.register(Vessel, follow=['comms_logs', 'vesseldetails_set', 'companyownership_set', 'vesselownership_set', 'owner_set', 'company_set'])
+reversion.register(VesselLogDocument, follow=[])
+reversion.register(VesselLogEntry, follow=['documents'])
+reversion.register(VesselDetails, follow=['proposal_set', 'feeitemapplicationfee_set'])
+reversion.register(CompanyOwnership, follow=['blocking_proposal', 'vessel', 'company'])
+reversion.register(VesselOwnership, follow=['owner', 'vessel', 'company_ownership'])
+reversion.register(VesselRegistrationDocument, follow=[])
+reversion.register(Owner, follow=['vesselownership_set'])
+reversion.register(Company, follow=['companyownership_set'])
+reversion.register(InsuranceCertificateDocument, follow=[])
+reversion.register(HullIdentificationNumberDocument, follow=[])
+reversion.register(ElectoralRollDocument, follow=[])
+reversion.register(MooringReportDocument, follow=[])
+reversion.register(WrittenProofDocument, follow=[])
+reversion.register(SignedLicenceAgreementDocument, follow=[])
+reversion.register(ProofOfIdentityDocument, follow=[])
+reversion.register(ProposalRequest, follow=[])
+reversion.register(ComplianceRequest, follow=[])
+reversion.register(AmendmentReason, follow=['amendmentrequest_set'])
+reversion.register(AmendmentRequest, follow=[])
+reversion.register(ProposalDeclinedDetails, follow=[])
+reversion.register(ProposalStandardRequirement, follow=['proposalrequirement_set'])
+reversion.register(ProposalUserAction, follow=[])
+reversion.register(ProposalRequirement, follow=['requirement_documents', 'proposalrequirement_set', 'compliance_requirement'])
+reversion.register(HelpPage, follow=[])
 
