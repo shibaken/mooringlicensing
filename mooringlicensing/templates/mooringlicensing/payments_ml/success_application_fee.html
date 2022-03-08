@@ -12,7 +12,9 @@
 
             {% if proposal and proposal.id %}
                 <div>
-                    <strong>Your application {{proposal.lodgement_number}} has been successfully submitted.</strong>
+                    {% if is_wla_or_aaa %}
+                        <strong>Your application {{proposal.lodgement_number}} has been successfully submitted.</strong>
+                    {% endif %}
                     <br/><br/>
                     <table>
                         <tr>
@@ -25,8 +27,9 @@
                         </tr>
                     </table>
                     <br/>
-                    <!-- label>Please note that it may take up to 21 business days to process your application.<br/><br/>If there is any missing information, the Department may assign this application back to you to complete. In that case you will be notified by email.</label -->
-                    <span>If there is any missing information, Rottnest Island Authority (RIA) may assign this application back to you to complete. In that case you will be notified by email.</span>
+                    {% if is_wla_or_aaa %}
+                        <span>If there is any missing information, Rottnest Island Authority (RIA) may assign this application back to you to complete. In that case you will be notified by email.</span>
+                    {% endif %}
                     {% if request.user == submitter or request.user.is_staff %}
                         {% if request.user.is_authenticated %}
                         <div class="row" style="margin-top:2em;">
