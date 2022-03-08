@@ -1012,10 +1012,10 @@ class AuthorisedUserPermit(Approval):
             m = {}
             # calculate phone number(s)
             numbers = []
-            if mooring.mooring_licence.submitter.phone_number:
-                numbers.append(mooring.mooring_licence.submitter.phone_number)
             if mooring.mooring_licence.submitter.mobile_number:
                 numbers.append(mooring.mooring_licence.submitter.mobile_number)
+            elif mooring.mooring_licence.submitter.phone_number:
+                numbers.append(mooring.mooring_licence.submitter.phone_number)
             m['name'] = mooring.name
             m['licensee_full_name'] = mooring.mooring_licence.submitter.get_full_name()
             m['licensee_email'] = mooring.mooring_licence.submitter.email
