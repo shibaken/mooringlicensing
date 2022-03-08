@@ -136,7 +136,8 @@ class BaseProposalSerializer(serializers.ModelSerializer):
     proposal_type = ProposalTypeSerializer()
     invoices = serializers.SerializerMethodField()
     start_date = serializers.ReadOnlyField()
-    end_date = serializers.ReadOnlyField()
+    # 20220308: end_date req in this serializer?
+    #end_date = serializers.ReadOnlyField()
     previous_application_vessel_details_id = serializers.SerializerMethodField()
     previous_application_preferred_bay_id = serializers.SerializerMethodField()
     current_vessels_rego_list = serializers.SerializerMethodField()
@@ -153,7 +154,7 @@ class BaseProposalSerializer(serializers.ModelSerializer):
         fields = (
                 'id',
                 'start_date',
-                'end_date',
+                #'end_date',
                 'application_type_code',
                 'application_type_text',
                 'approval_type_text',
@@ -681,7 +682,8 @@ class InternalProposalSerializer(BaseProposalSerializer):
                 'id',
                 'migrated',
                 'start_date',
-                'end_date',
+                # 20220308: end_date req in this serializer?
+                #'end_date',
                 'application_type',
                 'approval_level',
                 'approval_level_document',
