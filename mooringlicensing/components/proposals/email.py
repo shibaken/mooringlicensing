@@ -1447,6 +1447,7 @@ def send_sticker_printing_batch_email(batches):
 
     context = {
         'batches': batches,
+        'public_url': get_public_url(),
     }
 
     from mooringlicensing.components.proposals.models import StickerPrintingContact
