@@ -78,8 +78,9 @@
                             <div class="form-group">
                                 <div class="row">
                                     <div class="col-sm-3">
-                                        <label v-if="processing_status == 'With Approver'" class="control-label pull-left"  for="Name">Details</label>
-                                        <label v-else class="control-label pull-left"  for="Name">Proposed Details</label>
+                                        <!--label v-if="processing_status == 'With Approver'" class="control-label pull-left"  for="Name">Details</label>
+                                        <label v-else class="control-label pull-left"  for="Name">Proposed Details</label-->
+                                        <label class="control-label pull-left"  for="Name">{{ detailsText }}</label>
                                     </div>
                                     <div class="col-sm-9">
                                         <textarea name="approval_details" class="form-control" style="width:70%;" v-model="approval.details"></textarea>
@@ -89,8 +90,9 @@
                             <div class="form-group">
                                 <div class="row">
                                     <div class="col-sm-3">
-                                        <label v-if="processing_status == 'With Approver'" class="control-label pull-left"  for="Name">BCC email</label>
-                                        <label v-else class="control-label pull-left"  for="Name">Proposed BCC email</label>
+                                        <!--label v-if="processing_status == 'With Approver'" class="control-label pull-left"  for="Name">BCC email</label>
+                                        <label v-else class="control-label pull-left"  for="Name">Proposed BCC email</label-->
+                                        <label class="control-label pull-left"  for="Name">{{ ccText }}</label>
                                     </div>
                                     <div class="col-sm-9">
                                         <input type="text" class="form-control" name="approval_cc" style="width:70%;" ref="bcc_email" v-model="approval.cc_email">
@@ -477,6 +479,21 @@ export default {
             var vm = this;
             return vm.startDateError;
         },
+        detailsText: function() {
+            let details = 'Proposed details';
+            if (this.proposal && ['wla', 'aaa'].includes(this.proposal.application_type_code) || this.proposal.processing_status === "With Approver") {
+                details = 'Details';
+            }
+            return details
+        },
+        ccText: function() {
+            let details = 'Proposed CC Email';
+            if (this.proposal && ['wla', 'aaa'].includes(this.proposal.application_type_code) || this.proposal.processing_status === "With Approver") {
+                details = 'CC Email';
+            }
+            return details
+        },
+
         title: function(){
             let title = this.processing_status == 'With Approver' ? 'Grant' : 'Propose grant';
             if (this.proposal && ['wla', 'aaa'].includes(this.proposal.application_type_code)) {
