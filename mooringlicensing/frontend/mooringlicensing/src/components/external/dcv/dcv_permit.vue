@@ -168,7 +168,6 @@ export default {
                 },
             }).
             on("select2:select",function (e) {
-                console.log('in select')
                 var selected = $(e.currentTarget);
                 //vm.vessel.rego_no = selected.val();
                 let id = selected.val();
@@ -176,7 +175,6 @@ export default {
                     //if (!isNew) {
                     if (e.params.data.isNew) {
                         // fetch the selected vessel from the backend
-                        console.log("new");
                         id = vm.validateRegoNo(id);
                         vm.dcv_permit.dcv_vessel =
                         {
@@ -193,7 +191,6 @@ export default {
                 });
             }).
             on("select2:unselect",function (e) {
-                console.log('select2:unselect')
                 var selected = $(e.currentTarget);
                 vm.dcv_permit.dcv_vessel = Object.assign({},
                     {
@@ -203,6 +200,7 @@ export default {
                         vessel_name: '',
                     }
                 );
+                $(vm.$refs.dcv_vessel_rego_nos).empty().trigger('change')
 
                 //vm.selectedRego = ''
             }).
