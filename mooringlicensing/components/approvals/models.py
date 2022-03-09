@@ -118,6 +118,8 @@ class MooringOnApproval(RevisionedMixin):
         if existing_ria_moorings >= 2 and not self.site_licensee:
             raise ValidationError('Maximum of two RIA selected moorings allowed per Authorised User Permit')
 
+        kwargs.pop('version_user', None)
+        kwargs.pop('version_comment', None)
         kwargs['no_revision'] = True
         super(MooringOnApproval, self).save(*args,**kwargs)
 
@@ -517,6 +519,8 @@ class Approval(RevisionedMixin):
         return max(ids) + 1 if ids else 1
 
     def save(self, *args, **kwargs):
+        kwargs.pop('version_user', None)
+        kwargs.pop('version_comment', None)
         kwargs['no_revision'] = True
         super(Approval, self).save(*args, **kwargs)
         self.child_obj.refresh_from_db()
@@ -900,6 +904,8 @@ class WaitingListAllocation(Approval):
     def save(self, *args, **kwargs):
         if self.lodgement_number == '':
             self.lodgement_number = self.prefix + '{0:06d}'.format(self.next_id)
+        kwargs.pop('version_user', None)
+        kwargs.pop('version_comment', None)
         kwargs['no_revision'] = True
         super(Approval, self).save(*args, **kwargs)
 
@@ -945,6 +951,8 @@ class AnnualAdmissionPermit(Approval):
     def save(self, *args, **kwargs):
         if self.lodgement_number == '':
             self.lodgement_number = self.prefix + '{0:06d}'.format(self.next_id)
+        kwargs.pop('version_user', None)
+        kwargs.pop('version_comment', None)
         kwargs['no_revision'] = True
         super(Approval, self).save(*args, **kwargs)
 
@@ -1044,6 +1052,8 @@ class AuthorisedUserPermit(Approval):
     def save(self, *args, **kwargs):
         if self.lodgement_number == '':
             self.lodgement_number = self.prefix + '{0:06d}'.format(self.next_id)
+        kwargs.pop('version_user', None)
+        kwargs.pop('version_comment', None)
         kwargs['no_revision'] = True
         super(Approval, self).save(*args, **kwargs)
 
@@ -1286,6 +1296,8 @@ class MooringLicence(Approval):
     def save(self, *args, **kwargs):
         if self.lodgement_number == '':
             self.lodgement_number = self.prefix + '{0:06d}'.format(self.next_id)
+        kwargs.pop('version_user', None)
+        kwargs.pop('version_comment', None)
         kwargs['no_revision'] = True
         super(Approval, self).save(*args, **kwargs)
 

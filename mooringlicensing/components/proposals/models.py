@@ -398,6 +398,8 @@ class Proposal(DirtyFieldsMixin, RevisionedMixin):
         self.save()
     
     def save(self, *args, **kwargs):
+        kwargs.pop('version_user', None)
+        kwargs.pop('version_comment', None)
         kwargs['no_revision'] = True
         super(Proposal, self).save(*args,**kwargs)
         if type(self) == Proposal:
