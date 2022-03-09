@@ -78,7 +78,11 @@ export default {
             return vm.errors;
         },
         title: function(){
-            return this.processing_status == 'With Approver' ? 'Decline': 'Proposed Decline';
+            let title = this.processing_status == 'With Approver' ? 'Decline': 'Proposed Decline';
+            if (this.proposal && ['wla', 'aaa'].includes(this.proposal.application_type_code)) {
+                title = 'Decline';
+            }
+            return title;
         },
         callFinalDecline: function() {
             let callFinalDecline = false

@@ -478,7 +478,11 @@ export default {
             return vm.startDateError;
         },
         title: function(){
-            return this.processing_status == 'With Approver' ? 'Grant' : 'Propose grant';
+            let title = this.processing_status == 'With Approver' ? 'Grant' : 'Propose grant';
+            if (this.proposal && ['wla', 'aaa'].includes(this.proposal.application_type_code)) {
+                title = 'Grant';
+            }
+            return title;
         },
         is_amendment: function(){
             return this.proposal_type == 'Amendment' ? true : false;
