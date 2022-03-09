@@ -66,6 +66,7 @@
             :readonly="readonly"
             :submitterId="submitterId"
             @updateSubmitText="updateSubmitText"
+            @updateAutoRenew="updateAutoRenew"
             @vesselChanged="updateVesselChanged"
             @changeMooring="updateMooringAuth"
             />
@@ -78,6 +79,7 @@
             :readonly="readonly"
             :submitterId="submitterId"
             @updateSubmitText="updateSubmitText"
+            @updateAutoRenew="updateAutoRenew"
             @vesselChanged="updateVesselChanged"
             />
 
@@ -181,6 +183,7 @@ export default {
       // WLA
       mooringPreferenceChanged: false,
       submitText: "Submit",
+      autoRenew: false,
     }
   },
   components: {
@@ -215,6 +218,7 @@ export default {
           }
           return text;
       },
+      /*
       autoRenew: function() {
           let renew = false;
           if (!this.vesselChanged && !this.mooringOptionsChanged && this.proposal.proposal_type.code ==='renewal' && ['mla', 'aua'].includes(this.proposal.application_type_code)) {
@@ -222,6 +226,7 @@ export default {
           }
           return renew;
       },
+      */
       submitterId: function() {
           let submitter = null;
           if (this.proposal && this.proposal.submitter && this.proposal.submitter.id) {
@@ -314,6 +319,9 @@ export default {
 
   },
   methods: {
+    updateAutoRenew: function(renew) {
+        this.autoRenew = renew;
+    },
       /*
     addEventListeners: function() {
         const submitButton = document.getElementById("submitButton");
