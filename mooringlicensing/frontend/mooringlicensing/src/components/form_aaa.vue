@@ -270,6 +270,7 @@
             let vm = this;
             vm.set_tabs();
             vm.form = document.forms.new_proposal;
+            this.updateVesselLength();
             //vm.eventListener();
             //window.addEventListener('beforeunload', vm.leaving);
             //indow.addEventListener('onblur', vm.leaving);
