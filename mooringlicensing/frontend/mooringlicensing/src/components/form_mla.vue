@@ -167,7 +167,7 @@
                 uuid: 0,
                 keepCurrentVessel: true,
                 showPaymentTab: false,
-                showInsuranceTab: false,
+                showInsuranceTab: true,
             }
         },
         components: {
@@ -339,7 +339,9 @@
             let vm = this;
             vm.set_tabs();
             vm.form = document.forms.new_proposal;
-            this.updateAmendmentRenewalProperties();
+            if (this.proposal && this.proposal.proposal_type == 'renewal') {
+                this.updateAmendmentRenewalProperties();
+            }
             //vm.eventListener();
             //window.addEventListener('beforeunload', vm.leaving);
             //indow.addEventListener('onblur', vm.leaving);

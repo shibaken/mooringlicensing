@@ -191,7 +191,7 @@
                 keepCurrentVessel: true,
                 changeMooring: false,
                 showPaymentTab: false,
-                showInsuranceTab: false,
+                showInsuranceTab: true,
                 higherVesselCategory: false,
             }
         },
@@ -374,7 +374,9 @@
             let vm = this;
             vm.set_tabs();
             vm.form = document.forms.new_proposal;
-            this.updateAmendmentRenewalProperties();
+            if (this.proposal && this.proposal.proposal_type == 'renewal') {
+                this.updateAmendmentRenewalProperties();
+            }
             //vm.eventListener();
             //window.addEventListener('beforeunload', vm.leaving);
             //indow.addEventListener('onblur', vm.leaving);
