@@ -375,3 +375,8 @@ os.environ['UPDATE_PAYMENT_ALLOCATION'] = 'True'
 CRON_CLASSES = [
     'mooringlicensing.cron.OracleIntegrationCronJob',
 ]
+
+# Is licence holder allowed to operate
+APPROVED_OPERATIONAL_STATUS = ['current', ]
+# Is licence/permit still approved?  Other than cancelled, expired or surrendered
+APPROVED_APPROVAL_STATUS = ['current', 'suspended', ]
