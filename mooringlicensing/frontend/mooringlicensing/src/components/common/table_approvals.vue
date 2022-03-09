@@ -608,9 +608,12 @@ export default {
                         searchable: true,
                         visible: true,
                         'render': function(row, type, full){
-                            //return full.vessel_draft;
-                            //return '';
-                            return `<div><a href='${full.licence_document}' target='_blank'><i style='color:red;' class='fa fa-file-pdf-o'></i></a></div>`;
+                            let ret_elems = `<div><a href='${full.licence_document}' target='_blank'><i style='color:red;' class='fa fa-file-pdf-o'></i></a></div>`;
+                            if (full.authorised_user_summary_document){
+                                ret_elems += `<div><a href='${full.authorised_user_summary_document}' target='_blank'><i style='color:red;' class='fa fa-file-pdf-o'></i></a></div>`;
+                            }
+
+                            return ret_elems
                         }
                     }
         },
