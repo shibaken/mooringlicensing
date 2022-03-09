@@ -294,6 +294,9 @@ class Proposal(DirtyFieldsMixin, RevisionedMixin):
     # AUA amendment
     keep_existing_mooring = models.BooleanField(default=False)
 
+    fee_season = models.ForeignKey('FeeSeason', null=True, blank=True)  # In some case, proposal doesn't have any fee related objects.  Which results in the impossibility to retrieve season, start_date, end_date, etc.
+                                                                        # To prevent that, fee_season is used in order to store those data.
+
     class Meta:
         app_label = 'mooringlicensing'
         verbose_name = "Application"
@@ -454,6 +457,11 @@ class Proposal(DirtyFieldsMixin, RevisionedMixin):
             return datetime.datetime(2021,11,30).date()
 
         if self.application_fees.count() < 1:
+            # current_datetime = datetime.datetime.now(pytz.timezone(TIME_ZONE))
+            # target_date = self.get_target_date(current_datetime.date())
+            # current_approvals_dict = self.vessel_details.vessel.get_current_approvals(target_date)
+            if self.fee_season:
+                return self.fee_season.end_date
             #return None
             raise ValidationError('proposals/models.py ln 455. End date set to null.')
         elif self.application_fees.count() == 1:
@@ -2076,11 +2084,14 @@ class AuthorisedUserApplication(Proposal):
         for key, approvals in current_approvals_dict.items():
             if key == 'mls' and approvals.count():
                 ml_exists_for_this_vessel = True
-            if approvals.count():
+            elif key == 'aaps' and approvals.count():
                 aap_exists_for_this_vessel = True
 
         if ml_exists_for_this_vessel:
             # When there is 'current' ML, no charge for the AUP
+            # But before leave here, we just want to store the fee_season user is applying for.
+            self.fee_season = fee_constructor.fee_season
+            self.save()
             return [], {}  # no line items, no db process
 
         fee_items_to_store = []
@@ -2960,13 +2971,13 @@ class Vessel(RevisionedMixin):
             start_date__lte=target_date,
             expiry_date__gte=target_date,
             current_proposal__vessel_details__vessel=self,
-        )
+        ).distinct()
         existing_aups = AuthorisedUserPermit.objects.filter(
             status__in=(Approval.APPROVAL_STATUS_CURRENT, Approval.APPROVAL_STATUS_SUSPENDED,),
             start_date__lte=target_date,
             expiry_date__gte=target_date,
             current_proposal__vessel_details__vessel=self,
-        )
+        ).distinct()
         existing_mls = MooringLicence.objects.filter(
             status__in=(Approval.APPROVAL_STATUS_CURRENT, Approval.APPROVAL_STATUS_SUSPENDED,),
             start_date__lte=target_date,
@@ -2974,7 +2985,7 @@ class Vessel(RevisionedMixin):
             proposal__processing_status__in=(Proposal.PROCESSING_STATUS_PRINTING_STICKER, Proposal.PROCESSING_STATUS_APPROVED,),
             proposal__vessel_details__vessel=self,
             proposal__vessel_ownership__end_date__isnull=True,
-        )
+        ).distinct()
 
         return {
             'aaps': existing_aaps,
