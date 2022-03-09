@@ -22,7 +22,7 @@
                   Mooring
                 </a>
               </li>
-              <li v-if="showPaymentTab" class="nav-item" id="li-payment">
+              <li v-show="showPaymentTab" class="nav-item" id="li-payment">
                 <a class="nav-link disabled" id="pills-payment-tab" data-toggle="pill" href="" role="tab" aria-controls="pills-payment" aria-selected="false">
                   Payment
                 </a>
@@ -264,22 +264,24 @@
                 /* set Applicant tab Active */
                 $('#pills-tab a[href="#pills-applicant"]').tab('show');
 
+                /*
                 if (vm.proposal.fee_paid) {
-                    /* Online Training tab */
                     $('#pills-online-training-tab').attr('style', 'background-color:#E5E8E8 !important; color: #99A3A4;');
                     $('#li-training').attr('class', 'nav-item disabled');
                     $('#pills-online-training-tab').attr("href", "")
                 }
-
                 if (!vm.proposal.training_completed) {
-                    /* Payment tab  (this is enabled after online_training is completed - in online_training.vue)*/
                     $('#pills-payment-tab').attr('style', 'background-color:#E5E8E8 !important; color: #99A3A4;');
                     $('#li-payment').attr('class', 'nav-item disabled');
                 }
+                */
 
                 /* Confirmation tab - Always Disabled */
                 $('#pills-confirm-tab').attr('style', 'background-color:#E5E8E8 !important; color: #99A3A4;');
                 $('#li-confirm').attr('class', 'nav-item disabled');
+                /* Payment tab - Always Disabled */
+                $('#pills-payment-tab').attr('style', 'background-color:#E5E8E8 !important; color: #99A3A4;');
+                $('#li-payment').attr('class', 'nav-item disabled');
             },
             /*
             eventListener: function(){
