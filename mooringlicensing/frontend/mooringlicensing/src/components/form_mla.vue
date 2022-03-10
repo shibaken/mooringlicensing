@@ -276,9 +276,10 @@
             },
             */
             updateAmendmentRenewalProperties: function() {
-                if (this.proposal && ['renewal', 'amendment'].includes(this.proposal.proposal_type)) {
+                if (this.proposal && ['renewal', 'amendment'].includes(this.proposal.proposal_type.code)) {
                     this.$nextTick(() => {
                         if (this.keepCurrentVessel && !this.higherVesselCategory) {
+                            console.log("here")
                             this.showPaymentTab = true;
                             this.showInsuranceTab = false;
                             this.$emit("updateSubmitText", "Pay / Submit");
