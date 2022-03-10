@@ -24,15 +24,19 @@ from mooringlicensing.components.approvals.models import Approval, ApprovalHisto
 
 class AuthUserPermitMigration(object):
     '''
-        from mooringlicensing.utils.waiting_list_migrate import WaitingListMigration, GrepSearch
-        WaitingListMigration(test=False)
+        PRELIM:
+            from mooringlicensing.utils.json_to_csv import JsonToCsv
+            JsonToCsv().convert()
+
+        from mooringlicensing.utils.authorised_user_migrate import AuthUserPermitMigration, GrepSearch
+        AuthUserPermitMigration(test=False)
     '''
 
     #def __init__(self, path='/var/www/mooringlicensing/mooringlicensing/utils/lotus_notes', test=False):
-    def __init__(self, path='/var/www/mooringlicensing/mooringlicensing/utils/lotus_notes_07Oct2021', path_csv='/var/www/mooringlicensing/mooringlicensing/utils/lotus_notes_all_csv', test=False):
+    #def __init__(self, path='/var/www/mooringlicensing/mooringlicensing/utils/lotus_notes_07Oct2021', path_csv='/var/www/mooringlicensing/mooringlicensing/utils/lotus_notes_all_csv', test=False):
+    def __init__(self, path='/var/www/mooringlicensing/mooringlicensing/utils/lotus_notes', test=False):
         self.path = path
-        self.path = path
-        self.path_csv = path_csv
+        self.path_csv = path + '_all_csv' if not path.endswith('/') else path.strip('/') + '_all_csv'
         self.test = test
 
         #self.waitlist = self.read_dict('Waitlist___Bay.json')
@@ -80,6 +84,8 @@ class AuthUserPermitMigration(object):
         expiry_date = datetime.date(2021,11,30)
         date_applied = '2020-08-31'
 
+        address_not_found = []
+        address_l_not_found = []
         address_list = []
         user_list = []
         vessel_list = []
@@ -102,6 +108,7 @@ class AuthUserPermitMigration(object):
         no_licencee = []
         count_no_mooring = 0
         with transaction.atomic():
+            #for idx, record in enumerate(self.moorings[984:], 984):
             for idx, record in enumerate(self.moorings, 1):
                 try:
                     #import ipdb; ipdb.set_trace()
@@ -131,6 +138,10 @@ class AuthUserPermitMigration(object):
 #                        print(f'NO EMAIL FOUND: {idx}, {pers_no}, {username}, {permit_type}, {mooring_no}')
 
                     address, phone_home, phone_mobile, phone_work = gs2.get_address(pers_no)
+                    if address is None:
+                        address_not_found.append(pers_no)
+                        print(f'ADDRESS NOT FOUND: {idx}, {pers_no}, {username} {permit_type}, {mooring_no}')
+                        continue
                     email, username = gs2.get_email()
                     email = email.split(';')[0]
                     firstname = username.split(' ')[-1]
@@ -159,6 +170,10 @@ class AuthUserPermitMigration(object):
                         #import ipdb; ipdb.set_trace()
                         address_l, phone_home_l, phone_mobile_l, phone_work_l = gs2.get_address(pers_no_l)
                         print(f'{idx}, {pers_no}, {address}, {username}, {permit_type}, {mooring_no}: Licencee - ({email_l} {username_l} {address_l}, {phone_mobile})')
+                        if address_l is None:
+                            address_l_not_found.append(pers_no_l)
+                            print(f'ADDRESS_L NOT FOUND: {idx}, {pers_no}, {username}, {permit_type}, {mooring_no}: Licencee - ({pers_no_l})')
+                            continue
                     else:
                         print(f'{idx}, {pers_no}, {address}, {username}, {permit_type}, {mooring_no}')
 
@@ -413,6 +428,8 @@ class AuthUserPermitMigration(object):
         print(f'no_persno: {no_persno}')
         print(f'no_email: {no_email}')
         print(f'no_licencee: {no_licencee}')
+        print(f'address_not_found: {address_not_found}')
+        print(f'address_l_not_found: {address_l_not_found}')
 
 
 class GrepSearch(object):
@@ -585,6 +602,10 @@ class GrepSearch2(object):
             res = output.decode('utf-8')
             ves_length = ast.literal_eval(res.splitlines()[0].split('csv:')[1])['RegLength1']
             ves_draft = ast.literal_eval(res.splitlines()[0].split('csv:')[1])['Draft1']
+            if ves_length == 'None':
+                ves_length = 0.0
+            if ves_draft == 'None':
+                ves_draft = 0.0
         except:
             ves_length = 0.0
             ves_draft = 0.0
