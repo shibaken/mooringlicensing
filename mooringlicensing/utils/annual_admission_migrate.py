@@ -27,6 +27,10 @@ class AnnualAdmissionMigration(object):
     '''
 
     def __init__(self, filename='mooringlicensing/utils/tests/AA/annual_admissions_booking_report_20210928.csv', test=False):
+        """
+        NOTE:
+            filename='mooringlicensing/utils/tests/AA/annual_admissions_booking_report_20210928.csv' comes from Moorings RIA system (??)
+        """
         self.filename = filename
         self.test = test
 

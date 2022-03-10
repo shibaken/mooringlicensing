@@ -24,8 +24,10 @@ from mooringlicensing.components.payments_ml.models import FeeSeason
 
 class DcvMigration(object):
     '''
-        from mooringlicensing.utils.waiting_list_migrate import DcvMigration, GrepSearch
+        from mooringlicensing.utils.dcv_migrate import DcvMigration, GrepSearch
         DcvMigration(test=False)
+        
+        # cp mooringlicensing/management/templates/Attachment\ Template\ -\ DCVP.docx /var/www/mooringlicensing/media/approval_permit_template/Attachment_Template_-_DCVP.docx
     '''
 
     def __init__(self, path='/var/www/mooringlicensing/mooringlicensing/utils/lotus_notes', test=False):
@@ -67,7 +69,8 @@ class DcvMigration(object):
 
     def migrate(self):
 
-        fee_season = FeeSeason.objects.get(name='2020-2021')
+        #fee_season = FeeSeason.objects.get(name='2020-2021')
+        fee_season = FeeSeason.objects.filter(name='2021 - 2022')[0]
         start_date = datetime.date(2020, 9, 1)
         end_date = datetime.date(2021, 10, 7)
 
@@ -80,7 +83,7 @@ class DcvMigration(object):
         added = []
         errors = []
         with transaction.atomic():
-            #for idx, record in enumerate(self.waitlist[390:], 1):
+            #for idx, record in enumerate(self.company[43:], 43):
             for idx, record in enumerate(self.company, 1):
                 try:
                     #import ipdb; ipdb.set_trace()
@@ -128,6 +131,7 @@ class DcvMigration(object):
                             dcv_organisation = DcvOrganisation.objects.get(name=org_name)
                         except ObjectDoesNotExist:
                             dcv_organisation = DcvOrganisation.objects.create(name=org_name)
+                    #import ipdb; ipdb.set_trace()
 
 
                     for idx,i in enumerate(['_3', '_11', '_12', '_13', '_14'], 1):
@@ -157,6 +161,7 @@ class DcvMigration(object):
                             dcv_organisation =dcv_organisation,
                             migrated = True
                         )
+                        #import ipdb; ipdb.set_trace()
                         dcv_permit.generate_dcv_permit_doc()
 
                         dcv_vessel_list.append(dcv_vessel.id)
