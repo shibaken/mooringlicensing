@@ -136,7 +136,7 @@ export default {
 
             return {
                 data: "id",
-                orderable: true,
+                orderable: false,
                 searchable: true,
                 visible: true,
                 'render': function(row, type, full){
@@ -167,18 +167,20 @@ export default {
                 'render': function(row, type, full){
                     return full.dcv_organisation_name;
                     //return '';
-                }
+                },
+                name: 'dcv_organisation__name',
             }
         },
         column_status: function(){
             return {
                 data: "id",
-                orderable: true,
+                orderable: false,
                 searchable: true,
                 visible: true,
                 'render': function(row, type, full){
                     return full.status;
-                }
+                },
+                name: 'status',
             }
         },
         column_year: function(){
@@ -189,13 +191,15 @@ export default {
                 visible: true,
                 'render': function(row, type, full){
                     return full.fee_season;
-                }
+                },
+                name: 'fee_season__name',
+
             }
         },
         column_sticker: function(){
             return {
                 data: "id",
-                orderable: true,
+                orderable: false,
                 searchable: true,
                 visible: true,
                 'render': function(row, type, full){
@@ -212,7 +216,7 @@ export default {
             return {
                 // 8. Action
                 data: "id",
-                orderable: true,
+                orderable: false,
                 searchable: true,
                 visible: true,
                 'render': function(row, type, full){
