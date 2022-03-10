@@ -523,7 +523,7 @@ class DcvPermitFeeSuccessView(TemplateView):
                 return render(request, self.template_name, context)
 
         except Exception as e:
-            print('in ApplicationFeeSuccessView.get() Exception')
+            print('in DcvPermitFeeSuccessView.get() Exception')
             print(e)
             if (self.LAST_DCV_PERMIT_FEE_ID in request.session) and DcvPermitFee.objects.filter(id=request.session[self.LAST_DCV_PERMIT_FEE_ID]).exists():
                 dcv_permit_fee = DcvPermitFee.objects.get(id=request.session[self.LAST_DCV_PERMIT_FEE_ID])
