@@ -644,8 +644,8 @@ def submit_vessel_data(instance, request, vessel_data):
             proposals_mla or approvals_ml)):
         #association_fail = True
         raise serializers.ValidationError("The vessel in the application is already listed in " +  
-        " , ".join(['{} {}'.format(proposal.description, proposal.lodgement_number) for proposal in proposals_wla]) +
-        " , ".join(['{} {}'.format(approval.description, approval.lodgement_number) for approval in approvals_wla])
+        ", ".join(['{} {} '.format(proposal.description, proposal.lodgement_number) for proposal in proposals_wla]) +
+        ", ".join(['{} {} '.format(approval.description, approval.lodgement_number) for approval in approvals_wla])
         )
     # Person can have only one WLA, Waiting Liast application, Mooring Licence and Mooring Licence application
     elif (type(instance.child_obj) == WaitingListApplication and (
@@ -659,24 +659,24 @@ def submit_vessel_data(instance, request, vessel_data):
             proposals_aua or approvals_aup or proposals_mla or approvals_ml)):
         #association_fail = True
         raise serializers.ValidationError("The vessel in the application is already listed in " +  
-        " , ".join(['{} {}'.format(proposal.description, proposal.lodgement_number) for proposal in proposals_aaa]) +
-        " , ".join(['{} {}'.format(proposal.description, proposal.lodgement_number) for proposal in proposals_aua]) +
-        " , ".join(['{} {}'.format(proposal.description, proposal.lodgement_number) for proposal in proposals_mla]) +
-        " , ".join(['{} {}'.format(approval.description, approval.lodgement_number) for approval in approvals_aap]) +
-        " , ".join(['{} {}'.format(approval.description, approval.lodgement_number) for approval in approvals_aup]) +
-        " , ".join(['{} {}'.format(approval.description, approval.lodgement_number) for approval in approvals_ml])
+        ", ".join(['{} {} '.format(proposal.description, proposal.lodgement_number) for proposal in proposals_aaa]) +
+        ", ".join(['{} {} '.format(proposal.description, proposal.lodgement_number) for proposal in proposals_aua]) +
+        ", ".join(['{} {} '.format(proposal.description, proposal.lodgement_number) for proposal in proposals_mla]) +
+        ", ".join(['{} {} '.format(approval.description, approval.lodgement_number) for approval in approvals_aap]) +
+        ", ".join(['{} {} '.format(approval.description, approval.lodgement_number) for approval in approvals_aup]) +
+        ", ".join(['{} {} '.format(approval.description, approval.lodgement_number) for approval in approvals_ml])
         )
     elif type(instance.child_obj) == AuthorisedUserApplication and (proposals_aua or approvals_aup):
         #association_fail = True
         raise serializers.ValidationError("The vessel in the application is already listed in " +  
-        " , ".join(['{} {}'.format(proposal.description, proposal.lodgement_number) for proposal in proposals_aua]) +
-        " , ".join(['{} {}'.format(approval.description, approval.lodgement_number) for approval in approvals_aup])
+        ", ".join(['{} {} '.format(proposal.description, proposal.lodgement_number) for proposal in proposals_aua]) +
+        ", ".join(['{} {} '.format(approval.description, approval.lodgement_number) for approval in approvals_aup])
         )
     elif type(instance.child_obj) == MooringLicenceApplication and (proposals_mla or approvals_ml):
         #association_fail = True
         raise serializers.ValidationError("The vessel in the application is already listed in " +  
-        " , ".join(['{} {}'.format(proposal.description, proposal.lodgement_number) for proposal in proposals_mla]) +
-        " , ".join(['{} {}'.format(approval.description, approval.lodgement_number) for approval in approvals_ml])
+        ", ".join(['{} {} '.format(proposal.description, proposal.lodgement_number) for proposal in proposals_mla]) +
+        ", ".join(['{} {} '.format(approval.description, approval.lodgement_number) for approval in approvals_ml])
         )
     #if association_fail:
      #   raise serializers.ValidationError("This vessel is already part of another application/permit/licence")
