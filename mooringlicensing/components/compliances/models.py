@@ -362,12 +362,11 @@ class ComplianceAmendmentRequest(CompRequest):
 
 
 import reversion
-reversion.register(Compliance, follow=['documents', 'action_logs', 'comms_logs', 'comprequest_set',])
-reversion.register(ComplianceDocument)
-reversion.register(ComplianceUserAction)
+reversion.register(Compliance, follow=['documents', 'action_logs', 'comms_logs', 'comprequest_set'])
+reversion.register(ComplianceDocument, follow=[])
+reversion.register(ComplianceUserAction, follow=[])
 reversion.register(ComplianceLogEntry, follow=['documents'])
-reversion.register(ComplianceLogDocument)
-reversion.register(CompRequest)
+reversion.register(ComplianceLogDocument, follow=[])
+reversion.register(CompRequest, follow=[])
 reversion.register(ComplianceAmendmentReason, follow=['complianceamendmentrequest_set'])
-reversion.register(ComplianceAmendmentRequest)
-
+reversion.register(ComplianceAmendmentRequest, follow=[])

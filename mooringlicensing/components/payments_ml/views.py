@@ -663,10 +663,12 @@ class ApplicationFeeSuccessView(TemplateView):
                 request.session[self.LAST_APPLICATION_FEE_ID] = application_fee.id
                 delete_session_application_invoice(request.session)
 
+                wla_or_aaa = True if proposal.application_type.code in [WaitingListApplication.code, AnnualAdmissionApplication.code,] else False
                 context = {
                     'proposal': proposal,
                     'submitter': submitter,
                     'fee_invoice': application_fee,
+                    'is_wla_or_aaa': wla_or_aaa,
                 }
                 return render(request, self.template_name, context)
 
@@ -692,10 +694,12 @@ class ApplicationFeeSuccessView(TemplateView):
             logger.error(msg)
             raise Exception(msg)
 
+        wla_or_aaa = True if proposal.application_type.code in [WaitingListApplication.code, AnnualAdmissionApplication.code,] else False
         context = {
             'proposal': proposal,
             'submitter': submitter,
             'fee_invoice': application_fee,
+            'is_wla_or_aaa': wla_or_aaa
         }
         return render(request, self.template_name, context)
 

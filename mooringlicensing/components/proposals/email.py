@@ -585,6 +585,7 @@ def send_expire_mla_notification_to_assessor(proposal, reason, due_date):
         'applicant': proposal.submitter,
         'due_date': due_date,
         'mooring_name': mooring_name,
+        'recipient': proposal.submitter
     }
 
     to_address = proposal.assessor_recipients
@@ -608,8 +609,8 @@ def send_endorser_reminder_email(proposal, request=None):
     )
 
     url = settings.SITE_URL if settings.SITE_URL else ''
-    endorse_url = url + reverse('endorse-url', kwargs={'uuid_str': proposal.child_obj.uuid})
-    decline_url = url + reverse('decline-url', kwargs={'uuid_str': proposal.child_obj.uuid})
+    endorse_url = url + reverse('endorse-url', kwargs={'uuid_str': proposal.uuid})
+    decline_url = url + reverse('decline-url', kwargs={'uuid_str': proposal.uuid})
     proposal_url = url + reverse('external-proposal-detail', kwargs={'proposal_pk': proposal.id})
 
     try:
@@ -1138,8 +1139,10 @@ def send_au_summary_to_ml_holder(approval, request):
             attachment = (file_name, au_summary_document.file.read(), 'application/pdf')
             attachments.append(attachment)
 
+    proposal = approval.current_proposal
     context = {
         'approval': approval,
+        'recipient': proposal.submitter,
     }
 
     to_address = approval.submitter.email
@@ -1444,6 +1447,7 @@ def send_sticker_printing_batch_email(batches):
 
     context = {
         'batches': batches,
+        'public_url': get_public_url(),
     }
 
     from mooringlicensing.components.proposals.models import StickerPrintingContact

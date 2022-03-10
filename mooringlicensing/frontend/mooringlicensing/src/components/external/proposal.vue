@@ -66,6 +66,7 @@
             :readonly="readonly"
             :submitterId="submitterId"
             @updateSubmitText="updateSubmitText"
+            @updateAutoRenew="updateAutoRenew"
             @vesselChanged="updateVesselChanged"
             @changeMooring="updateMooringAuth"
             />
@@ -78,6 +79,7 @@
             :readonly="readonly"
             :submitterId="submitterId"
             @updateSubmitText="updateSubmitText"
+            @updateAutoRenew="updateAutoRenew"
             @vesselChanged="updateVesselChanged"
             />
 
@@ -98,13 +100,13 @@
                                                 I agree with all the <a href="https://rottnestisland.com/boating/boating-on-rottnest-island/tandc" target="_blank">RIA Terms and Conditions</a>
                                             </label>
 
-                                            <button v-if="saveExitProposal || !terms_and_conditions_checked" type="button" class="btn btn-primary" disabled>
-                                                Save and Exit&nbsp;<i v-show="terms_and_conditions_checked" class="fa fa-circle-o-notch fa-spin fa-fw"></i>
+                                            <button v-if="saveExitProposal" type="button" class="btn btn-primary" disabled>
+                                                Save and Exit&nbsp;<i class="fa fa-circle-o-notch fa-spin fa-fw"></i>
                                             </button>
                                             <input v-else type="button" @click.prevent="save_exit" class="btn btn-primary" value="Save and Exit" :disabled="savingProposal || paySubmitting"/>
 
-                                            <button v-if="savingProposal || !terms_and_conditions_checked" type="button" class="btn btn-primary" disabled>
-                                                Save and Continue&nbsp;<i v-show="terms_and_conditions_checked" class="fa fa-circle-o-notch fa-spin fa-fw"></i>
+                                            <button v-if="savingProposal" type="button" class="btn btn-primary" disabled>
+                                                Save and Continue&nbsp;<i class="fa fa-circle-o-notch fa-spin fa-fw"></i>
                                             </button>
                                             <input v-else type="button" @click.prevent="save" class="btn btn-primary" value="Save and Continue" :disabled="saveExitProposal || paySubmitting"/>
 
@@ -181,6 +183,7 @@ export default {
       // WLA
       mooringPreferenceChanged: false,
       submitText: "Submit",
+      autoRenew: false,
     }
   },
   components: {
@@ -215,6 +218,7 @@ export default {
           }
           return text;
       },
+      /*
       autoRenew: function() {
           let renew = false;
           if (!this.vesselChanged && !this.mooringOptionsChanged && this.proposal.proposal_type.code ==='renewal' && ['mla', 'aua'].includes(this.proposal.application_type_code)) {
@@ -222,6 +226,7 @@ export default {
           }
           return renew;
       },
+      */
       submitterId: function() {
           let submitter = null;
           if (this.proposal && this.proposal.submitter && this.proposal.submitter.id) {
@@ -314,6 +319,9 @@ export default {
 
   },
   methods: {
+    updateAutoRenew: function(renew) {
+        this.autoRenew = renew;
+    },
       /*
     addEventListeners: function() {
         const submitButton = document.getElementById("submitButton");

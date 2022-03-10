@@ -67,6 +67,7 @@ class Command(BaseCommand):
         if approval_type == WaitingListAllocation.code:
             queries = Q()
             queries &= Q(status__in=(Approval.APPROVAL_STATUS_CURRENT, Approval.APPROVAL_STATUS_SUSPENDED))
+            queries &= Q(current_proposal__vessel_ownership__end_date__isnull=False)
             queries &= Q(current_proposal__vessel_ownership__end_date__lt=boundary_date)
             queries &= Q(vessel_nomination_reminder_sent=False)
             # if debug:

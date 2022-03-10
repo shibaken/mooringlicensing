@@ -118,6 +118,9 @@ class MooringOnApproval(RevisionedMixin):
         if existing_ria_moorings >= 2 and not self.site_licensee:
             raise ValidationError('Maximum of two RIA selected moorings allowed per Authorised User Permit')
 
+        kwargs.pop('version_user', None)
+        kwargs.pop('version_comment', None)
+        kwargs['no_revision'] = True
         super(MooringOnApproval, self).save(*args,**kwargs)
 
     class Meta:
@@ -429,7 +432,8 @@ class Approval(RevisionedMixin):
             for w in WaitingListAllocation.objects.filter(
                     wla_queue_date__isnull=False,
                     current_proposal__preferred_bay=self.current_proposal.preferred_bay,
-                    status='current').order_by(
+                    status__in=['current', 'suspended']).order_by(
+                    #status='current').order_by(
                             'wla_queue_date'):
                 w.wla_order = place
                 w.save()
@@ -516,6 +520,9 @@ class Approval(RevisionedMixin):
         return max(ids) + 1 if ids else 1
 
     def save(self, *args, **kwargs):
+        kwargs.pop('version_user', None)
+        kwargs.pop('version_comment', None)
+        kwargs['no_revision'] = True
         super(Approval, self).save(*args, **kwargs)
         self.child_obj.refresh_from_db()
         if type(self.child_obj) == MooringLicence and self.status in ['expired', 'cancelled', 'surrendered']:
@@ -898,6 +905,9 @@ class WaitingListAllocation(Approval):
     def save(self, *args, **kwargs):
         if self.lodgement_number == '':
             self.lodgement_number = self.prefix + '{0:06d}'.format(self.next_id)
+        kwargs.pop('version_user', None)
+        kwargs.pop('version_comment', None)
+        kwargs['no_revision'] = True
         super(Approval, self).save(*args, **kwargs)
 
     def manage_stickers(self, proposal):
@@ -942,6 +952,9 @@ class AnnualAdmissionPermit(Approval):
     def save(self, *args, **kwargs):
         if self.lodgement_number == '':
             self.lodgement_number = self.prefix + '{0:06d}'.format(self.next_id)
+        kwargs.pop('version_user', None)
+        kwargs.pop('version_comment', None)
+        kwargs['no_revision'] = True
         super(Approval, self).save(*args, **kwargs)
 
     def manage_stickers(self, proposal):
@@ -1008,10 +1021,10 @@ class AuthorisedUserPermit(Approval):
             m = {}
             # calculate phone number(s)
             numbers = []
-            if mooring.mooring_licence.submitter.phone_number:
-                numbers.append(mooring.mooring_licence.submitter.phone_number)
             if mooring.mooring_licence.submitter.mobile_number:
                 numbers.append(mooring.mooring_licence.submitter.mobile_number)
+            elif mooring.mooring_licence.submitter.phone_number:
+                numbers.append(mooring.mooring_licence.submitter.phone_number)
             m['name'] = mooring.name
             m['licensee_full_name'] = mooring.mooring_licence.submitter.get_full_name()
             m['licensee_email'] = mooring.mooring_licence.submitter.email
@@ -1040,6 +1053,9 @@ class AuthorisedUserPermit(Approval):
     def save(self, *args, **kwargs):
         if self.lodgement_number == '':
             self.lodgement_number = self.prefix + '{0:06d}'.format(self.next_id)
+        kwargs.pop('version_user', None)
+        kwargs.pop('version_comment', None)
+        kwargs['no_revision'] = True
         super(Approval, self).save(*args, **kwargs)
 
     def internal_reissue(self):
@@ -1234,46 +1250,56 @@ class MooringLicence(Approval):
         return context
 
     def get_context_for_licence_permit(self):
-        # Return context for the licence/permit document
-        licenced_vessel = None
-        additional_vessels = []
+        try:
+            logger.info("self.issue_date: {}".format(self.issue_date))
+            logger.info("self.expiry_date: {}".format(self.expiry_date))
+            # Return context for the licence/permit document
+            licenced_vessel = None
+            additional_vessels = []
 
-        max_vessel_length = 0
-        for vessel in self.current_vessels:
-            v = {}
-            v['vessel_rego_no'] = vessel['rego_no']
-            v['vessel_name'] = vessel['latest_vessel_details'].vessel_name
-            v['vessel_length'] = vessel['latest_vessel_details'].vessel_applicable_length
-            v['vessel_draft'] = vessel['latest_vessel_details'].vessel_draft
-            if not licenced_vessel:
-                # No licenced vessel stored yet
-                licenced_vessel = v
-            else:
-                if licenced_vessel['vessel_length'] < v['vessel_length']:
-                    # Found a larger vessel than the one stored as a licenced.  Replace it by the larger one.
-                    additional_vessels.append(licenced_vessel)
+            max_vessel_length = 0
+            for vessel in self.current_vessels:
+                v = {}
+                v['vessel_rego_no'] = vessel['rego_no']
+                v['vessel_name'] = vessel['latest_vessel_details'].vessel_name
+                v['vessel_length'] = vessel['latest_vessel_details'].vessel_applicable_length
+                v['vessel_draft'] = vessel['latest_vessel_details'].vessel_draft
+                if not licenced_vessel:
+                    # No licenced vessel stored yet
                     licenced_vessel = v
+                else:
+                    if licenced_vessel['vessel_length'] < v['vessel_length']:
+                        # Found a larger vessel than the one stored as a licenced.  Replace it by the larger one.
+                        additional_vessels.append(licenced_vessel)
+                        licenced_vessel = v
 
-        context = {
-            'approval': self,
-            'application': self.current_proposal,
-            'issue_date': self.issue_date.strftime('%d/%m/%Y'),
-            'applicant_name': self.submitter.get_full_name(),
-            'p_address_line1': self.postal_address_line1,
-            'p_address_line2': self.postal_address_line2,
-            'p_address_suburb': self.postal_address_suburb,
-            'p_address_state': self.postal_address_state,
-            'p_address_postcode': self.postal_address_postcode,
-            'licenced_vessel': licenced_vessel,  # vessel_rego_no, vessel_name, vessel_length, vessel_draft
-            'additional_vessels': additional_vessels,
-            'mooring': self.mooring,
-            'expiry_date': self.expiry_date.strftime('%d/%m/%Y')
-        }
-        return context
+            context = {
+                'approval': self,
+                'application': self.current_proposal,
+                'issue_date': self.issue_date.strftime('%d/%m/%Y'),
+                'applicant_name': self.submitter.get_full_name(),
+                'p_address_line1': self.postal_address_line1,
+                'p_address_line2': self.postal_address_line2,
+                'p_address_suburb': self.postal_address_suburb,
+                'p_address_state': self.postal_address_state,
+                'p_address_postcode': self.postal_address_postcode,
+                'licenced_vessel': licenced_vessel,  # vessel_rego_no, vessel_name, vessel_length, vessel_draft
+                'additional_vessels': additional_vessels,
+                'mooring': self.mooring,
+                'expiry_date': self.expiry_date.strftime('%d/%m/%Y')
+            }
+            return context
+        except Exception as e:
+            logger.error("get_context_for_licence_permit")
+            logger.error(e)
+            raise e
 
     def save(self, *args, **kwargs):
         if self.lodgement_number == '':
             self.lodgement_number = self.prefix + '{0:06d}'.format(self.next_id)
+        kwargs.pop('version_user', None)
+        kwargs.pop('version_comment', None)
+        kwargs['no_revision'] = True
         super(Approval, self).save(*args, **kwargs)
 
     def internal_reissue(self):
@@ -1361,6 +1387,12 @@ class MooringLicence(Approval):
     @property
     def vessel_list(self):
         return self.current_vessel_attributes('vessel')
+
+    def get_most_recent_end_date(self):
+        # This function returns None if no vessels have been sold
+        # If even one vessel has been sold, this function returns the end_date even if there is a current vessel.
+        proposal = self.proposal_set.latest('vessel_ownership__end_date')
+        return proposal.vessel_ownership.end_date
 
     @property
     def vessel_list_for_payment(self):
@@ -1576,7 +1608,7 @@ class DcvAdmissionArrival(RevisionedMixin):
         return '{} ({}-{})'.format(self.dcv_admission, self.arrival_date, self.departure_date)
 
     def get_summary(self):
-        summary_dict = {'arrival_date': self.arrival_date, 'departure_date': self.departure_date}
+        summary_dict = {'arrival_date': self.arrival_date.strftime('%d/%m/%Y') if self.arrival_date else '', 'departure_date': self.departure_date.strftime('%d/%m/%Y') if self.departure_date else ''}
         for age_group_choice in AgeGroup.NAME_CHOICES:
             age_group = AgeGroup.objects.get(code=age_group_choice[0])
             dict_type = {}
@@ -2097,27 +2129,32 @@ def delete_documents(sender, instance, *args, **kwargs):
 
 
 import reversion
-reversion.register(Approval, follow=['waitinglistallocation', 'annualadmissionpermit', 'authoriseduserpermit', 'mooringlicence', 
-    'compliances', 'documents', 'comms_logs', 'action_logs', "renewal_documents",
-    ])
-reversion.register(WaitingListAllocation)
-reversion.register(AuthorisedUserPermit)
-reversion.register(AnnualAdmissionPermit)
-reversion.register(MooringLicence)
-reversion.register(ApprovalDocument, follow=['licence_document', 'cover_letter_document',])
+reversion.register(WaitingListOfferDocument, follow=[])
+reversion.register(RenewalDocument, follow=['renewal_document'])
+reversion.register(AuthorisedUserSummaryDocument, follow=['approvals'])
+reversion.register(ApprovalDocument, follow=['approvalhistory_set', 'licence_document', 'cover_letter_document'])
+reversion.register(MooringOnApproval, follow=['approval', 'mooring', 'sticker'])
+reversion.register(VesselOwnershipOnApproval, follow=['approval', 'vessel_ownership'])
+reversion.register(ApprovalHistory, follow=[])
+#reversion.register(Approval, follow=['proposal_set', 'ria_generated_proposal', 'waiting_list_offer_documents', 'renewal_documents', 'authorised_user_summary_documents', 'documents', 'mooringonapproval_set', 'vesselownershiponapproval_set', 'approvalhistory_set', 'replace', 'comms_logs', 'action_logs', 'stickers', 'compliances'])
+reversion.register(Approval)
+reversion.register(WaitingListAllocation, follow=['proposal_set', 'ria_generated_proposal', 'waiting_list_offer_documents', 'renewal_documents', 'authorised_user_summary_documents', 'documents', 'mooringonapproval_set', 'vesselownershiponapproval_set', 'approvalhistory_set', 'replace', 'comms_logs', 'action_logs', 'stickers', 'compliances'])
+reversion.register(AnnualAdmissionPermit, follow=['proposal_set', 'ria_generated_proposal', 'waiting_list_offer_documents', 'renewal_documents', 'authorised_user_summary_documents', 'documents', 'mooringonapproval_set', 'vesselownershiponapproval_set', 'approvalhistory_set', 'replace', 'comms_logs', 'action_logs', 'stickers', 'compliances'])
+reversion.register(AuthorisedUserPermit, follow=['proposal_set', 'ria_generated_proposal', 'waiting_list_offer_documents', 'renewal_documents', 'authorised_user_summary_documents', 'documents', 'mooringonapproval_set', 'vesselownershiponapproval_set', 'approvalhistory_set', 'replace', 'comms_logs', 'action_logs', 'stickers', 'compliances'])
+reversion.register(MooringLicence, follow=['proposal_set', 'ria_generated_proposal', 'waiting_list_offer_documents', 'renewal_documents', 'authorised_user_summary_documents', 'documents', 'mooringonapproval_set', 'vesselownershiponapproval_set', 'approvalhistory_set', 'replace', 'comms_logs', 'action_logs', 'stickers', 'compliances', 'mooring'])
+reversion.register(PreviewTempApproval, follow=['proposal_set', 'ria_generated_proposal', 'waiting_list_offer_documents', 'renewal_documents', 'authorised_user_summary_documents', 'documents', 'mooringonapproval_set', 'vesselownershiponapproval_set', 'approvalhistory_set', 'replace', 'comms_logs', 'action_logs', 'stickers', 'compliances'])
 reversion.register(ApprovalLogEntry, follow=['documents'])
-reversion.register(ApprovalLogDocument)
-reversion.register(ApprovalUserAction)
-reversion.register(MooringOnApproval, follow=["approval", "mooring", "sticker"])
-reversion.register(VesselOwnershipOnApproval, follow=["approval", "vessel_ownership"])
-reversion.register(ApprovalHistory, follow=["approval", "vessel_ownership", "proposal"])
-reversion.register(DcvOrganisation)
-reversion.register(DcvVessel, follow=["dcv_organisation"])
-reversion.register(DcvAdmission, follow=["dcv_vessel", "admissions"])
-reversion.register(DcvAdmissionArrival, follow=["dcv_admission", "fee_season", "fee_constructor"])
-reversion.register(DcvPermit, follow=["fee_season", "dcv_vessel", "dcv_organisation", "permits"])
-reversion.register(DcvAdmissionDocument)
-reversion.register(DcvPermitDocument)
-reversion.register(Sticker, follow=["approval", "dcv_permit", "fee_constructor", "fee_season", "vessel_ownership", "proposal_initiated"])
-reversion.register(RenewalDocument)
-
+reversion.register(ApprovalLogDocument, follow=[])
+reversion.register(ApprovalUserAction, follow=[])
+reversion.register(DcvOrganisation, follow=['dcvvessel_set', 'dcvpermit_set'])
+reversion.register(DcvVessel, follow=['dcv_admissions', 'dcv_permits'])
+reversion.register(DcvAdmission, follow=['dcv_admission_fees', 'dcv_admission_arrivals', 'admissions'])
+reversion.register(DcvAdmissionArrival, follow=['numberofpeople_set'])
+reversion.register(AgeGroup, follow=['feeitem_set', 'numberofpeople_set'])
+reversion.register(AdmissionType, follow=['feeitem_set', 'numberofpeople_set'])
+reversion.register(NumberOfPeople, follow=[])
+reversion.register(DcvPermit, follow=['dcv_permit_fees', 'permits', 'stickers'])
+reversion.register(DcvAdmissionDocument, follow=[])
+reversion.register(DcvPermitDocument, follow=[])
+reversion.register(Sticker, follow=['mooringonapproval_set', 'approvalhistory_set', 'sticker_action_details'])
+reversion.register(StickerActionDetail, follow=[])

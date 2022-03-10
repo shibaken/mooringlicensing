@@ -47,19 +47,13 @@ class Command(BaseCommand):
 
         logger.info('Running command {}'.format(__name__))
 
-        # For debug
-        # params = options.get('params')
-        # debug = True if params.get('debug', 'f').lower() in ['true', 't', 'yes', 'y'] else False
-        # approval_lodgement_number = params.get('cancel_approvals_due_to_no_vessels_nominated_lodgement_number', 'no-number')
-
         # Get approvals
         if approval_type == WaitingListAllocation.code:
             queries = Q()
             queries &= Q(status__in=(Approval.APPROVAL_STATUS_CURRENT, Approval.APPROVAL_STATUS_SUSPENDED))
+            queries &= Q(current_proposal__vessel_ownership__end_date__isnull=False)
             queries &= Q(current_proposal__vessel_ownership__end_date__lt=boundary_date)
             queries &= Q(vessel_nomination_reminder_sent=False)  # Is this correct?  SHould be True?
-            # if debug:
-            #     queries = queries | Q(lodgement_number__iexact=approval_lodgement_number)
             approvals = approval_class.objects.filter(queries)
         elif approval_type == MooringLicence.code:
             queries = Q()
@@ -72,20 +66,8 @@ class Command(BaseCommand):
                 # Check if there is at least one vessel which meets the ML vessel requirement
                 if not ml_meet_vessel_requirement(approval, boundary_date):
                     approvals.append(approval)
-            # if debug:
-            #     apps = MooringLicence.objects.filter(lodgement_number__iexact=approval_lodgement_number)
-            #     if apps:
-            #         approvals.append(apps[0])
 
-        # Construct queries
-        # queries = Q()
-        # queries &= Q(status__in=(Approval.APPROVAL_STATUS_CURRENT, Approval.APPROVAL_STATUS_SUSPENDED))
-        # queries &= Q(current_proposal__vessel_ownership__end_date__lt=boundary_date)
-        # queries &= Q(vessel_nomination_reminder_sent=True)
-        # if debug:
-        #     queries = queries | Q(lodgement_number__iexact=approval_lodgement_number)
-
-        for a in approval_class.objects.filter(queries):
+        for a in approvals:
             try:
                 send_approval_cancelled_due_to_no_vessels_nominated_mail(a)
                 # a.vessel_nomination_reminder_sent = True

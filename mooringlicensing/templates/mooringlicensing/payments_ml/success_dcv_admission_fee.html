@@ -1,5 +1,6 @@
 {% extends 'mooringlicensing/base.html' %}
 {% load static %}
+
 {% block content %}
     <div class="container">
         <div class="well">
@@ -12,8 +13,8 @@
 
             {% if dcv_admission and dcv_admission.id %}
                 <div>
-                    <strong>Your application {{dcv_admission.lodgement_number}} has been successfully submitted.</strong>
-                    <br/><br/>
+<!--                    <strong>Your application {{dcv_admission.lodgement_number}} has been successfully submitted.</strong>-->
+<!--                    <br/><br/>-->
                     <table>
                         <tr>
                             <td><strong>DCV Admission: </strong></td>
@@ -33,8 +34,7 @@
                     {% endif %}
                     {% endfor %}
                     <br/>
-                    <!-- label>Please note that it may take up to 21 business days to process your application.<br/><br/>If there is any missing information, the Department may assign this application back to you to complete. In that case you will be notified by email.</label -->
-                    <span>If there is any missing information, Rottnest Island Authority (RIA) may assign this application back to you to complete. In that case you will be notified by email.</span>
+<!--                    <span>If there is any missing information, Rottnest Island Authority (RIA) may assign this application back to you to complete. In that case you will be notified by email.</span>-->
                     {% if request.user == submitter or request.user.is_staff %}
                     {% if request.user.is_authenticated %}
                     <div class="row" style="margin-top:2em;">
