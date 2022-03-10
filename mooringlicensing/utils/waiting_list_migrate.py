@@ -61,6 +61,7 @@ class WaitingListMigration(object):
         #submitter = EmailUser.objects.get(email='jawaid.mushtaq@dbca.wa.gov.au')
         expiry_date = datetime.date(2021,11,30)
 
+        addresses_not_found = []
         address_list = []
         user_list = []
         vessel_list = []
@@ -77,13 +78,18 @@ class WaitingListMigration(object):
         added = []
         errors = []
         with transaction.atomic():
-            #for idx, record in enumerate(self.waitlist[165:], 1):
+            #for idx, record in enumerate(self.waitlist[281:], 281):
             for idx, record in enumerate(self.waitlist, 1):
                 try:
                     #import ipdb; ipdb.set_trace()
                     pers_no = record.get('PersNo')
                     email_record = GrepSearch(pers_no, path=self.path).search('PersNo', 'EMail')
                     address_record = GrepSearch(pers_no, path=self.path).search('PersNo', '_1')
+                    if address_record is None:
+                        print(f'Address Not Found: {idx}, {pers_no}')
+                        addresses_not_found.append(pers_no)
+                        continue
+
 
                     phonemobile_record = {}
                     if 'PhoneMobile' not in address_record:
@@ -97,7 +103,7 @@ class WaitingListMigration(object):
                     else:
                         phonehome_record = address_record
 
-                    email = email_record.get('EMail').lower()
+                    email = email_record.get('EMail').lower().strip()
                     mobile_no = phonemobile_record.get('PhoneMobile')
                     username = record.get('UserName').lower()
                     firstname = username.split(' ')[-1].title()
@@ -265,6 +271,7 @@ class WaitingListMigration(object):
         print(f'ProposalUserAction.objects.get(id__in={user_action_list}).delete()')
         print(f'WaitingListAllocation.objects.get(id__in={approval_list}).delete()')
         print(f'ApprovalHistory.objects.get(id__in={approval_history_list}).delete()')
+        print(f'Addresses Not Found: {addresses_not_found}')
 
 def clear_record():
     Address.objects.last().delete()
@@ -307,7 +314,7 @@ class GrepSearch(object):
 
         #import ipdb; ipdb.set_trace()
         # Get all files that contains string 'self.search_str1'
-        #files = self.get_files(self.search_str1)
+#        files = self.get_files(self.search_str1)
         files=[
             self.path + os.sep + 'Admin___EContacts___6_Waitlist.json',
             self.path + os.sep + 'People___Trim_File.json',
@@ -319,6 +326,7 @@ class GrepSearch(object):
             self.path + os.sep + 'Admin___Interrogation___Lic___WL_DOB_check.json',
             self.path + os.sep + 'Auth_Users___Surname___No_L.json',
             self.path + os.sep + 'Auth_Users___Surname___with_L.json',
+            self.path + os.sep + 'Vessel___HIN___Current.json',
         ]
 
         for fname in files:

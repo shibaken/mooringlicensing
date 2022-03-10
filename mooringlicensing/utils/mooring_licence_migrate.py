@@ -103,17 +103,25 @@ class MooringLicenceMigration(object):
                         licence_pc = owner_record['LicPC']
 
                     surname_record = self.search('PersNo', pers_no, self.surname)
+                    #email = GrepSearch(pers_no, path=self.path).search('PersNo', 'EMail')
+                    #email_record.get('EMail').lower().strip()
+                    #H1N = GrepSearch(pers_no, path=self.path).search('PersNo', 'H1N1')
                     email = surname_record['EMail'].split(',')[0].strip().lower()
                     HIN = surname_record['HIN1']
 
                     vessel_record = self.search('PersNo', pers_no, self.vessel)
                     if vessel_record:
                         vessel_dot = vessel_record.get('DoTRego1')
+                        #email = GrepSearch(pers_no, path=self.path).search('PersNo', 'EMail')
                         vessel_overall_length = Decimal( vessel_record.get('RegLength1') )
                         vessel_draft = Decimal( vessel_record.get('Draft1') )
                     else:
                         vessel_dot = rego_no
-                        vessel_overall_length = Decimal( surname_record.get('RegLength1') )
+                        #vessel_overall_length = Decimal( GrepSearch(pers_no, path=self.path).search('PersNo', 'RegLength1') )
+                        try:
+                            vessel_overall_length = Decimal( surname_record.get('RegLength1') )
+                        except Exception as e:
+                            vessel_overall_length = Decimal( 0.0 )
                         vessel_draft = Decimal( 0.0 )
 
                     vessel_type = 'other'
