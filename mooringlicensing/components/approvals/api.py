@@ -883,6 +883,8 @@ class DcvPermitFilterBackend(DatatablesFilterBackend):
         queryset = queryset.order_by(*ordering)
         if len(ordering):
             queryset = queryset.order_by(*ordering)
+        else:
+            queryset = queryset.order_by('-lodgement_number')
 
         try:
             queryset = super(DcvPermitFilterBackend, self).filter_queryset(request, queryset, view)
@@ -907,6 +909,7 @@ class DcvPermitPaginatedViewSet(viewsets.ModelViewSet):
     serializer_class = ListDcvPermitSerializer
     search_fields = ['lodgement_number', ]
     page_size = 10
+    ordering = ['-id']
 
     def get_queryset(self):
         request_user = self.request.user
@@ -1001,6 +1004,8 @@ class DcvAdmissionFilterBackend(DatatablesFilterBackend):
         queryset = queryset.order_by(*ordering)
         if len(ordering):
             queryset = queryset.order_by(*ordering)
+        else:
+            queryset = queryset.order_by('-lodgement_number')
 
         try:
             queryset = super(DcvAdmissionFilterBackend, self).filter_queryset(request, queryset, view)
