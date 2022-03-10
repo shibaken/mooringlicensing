@@ -276,24 +276,27 @@
             },
             */
             updateAmendmentRenewalProperties: function() {
-                this.$nextTick(() => {
-                    if (this.keepCurrentVessel && !this.higherVesselCategory) {
-                        this.showPaymentTab = true;
-                        this.showInsuranceTab = false;
-                        this.$emit("updateSubmitText", "Pay / Submit");
-                        this.$emit("updateAutoRenew", true);
-                    } else if (this.keepCurrentVessel && this.higherVesselCategory) {
-                        this.showPaymentTab = false;
-                        this.showInsuranceTab = false;
-                        this.$emit("updateSubmitText", "Submit");
-                        this.$emit("updateAutoRenew", false);
-                    } else if (!this.keepCurrentVessel) {
-                        this.showPaymentTab = false;
-                        this.showInsuranceTab = true;
-                        this.$emit("updateSubmitText", "Submit");
-                        this.$emit("updateAutoRenew", false);
-                    }
-                });
+                if (this.proposal && ['renewal', 'amendment'].includes(this.proposal.proposal_type.code)) {
+                    this.$nextTick(() => {
+                        if (this.keepCurrentVessel && !this.higherVesselCategory) {
+                            console.log("here")
+                            this.showPaymentTab = true;
+                            this.showInsuranceTab = false;
+                            this.$emit("updateSubmitText", "Pay / Submit");
+                            this.$emit("updateAutoRenew", true);
+                        } else if (this.keepCurrentVessel && this.higherVesselCategory) {
+                            this.showPaymentTab = false;
+                            this.showInsuranceTab = false;
+                            this.$emit("updateSubmitText", "Submit");
+                            this.$emit("updateAutoRenew", false);
+                        } else if (!this.keepCurrentVessel) {
+                            this.showPaymentTab = false;
+                            this.showInsuranceTab = true;
+                            this.$emit("updateSubmitText", "Submit");
+                            this.$emit("updateAutoRenew", false);
+                        }
+                    });
+                }
             },
 
             populateProfile: function(profile) {
@@ -341,9 +344,7 @@
             let vm = this;
             vm.set_tabs();
             vm.form = document.forms.new_proposal;
-            if (this.proposal && this.proposal.proposal_type == 'renewal') {
-                this.updateAmendmentRenewalProperties();
-            }
+            this.updateAmendmentRenewalProperties();
             //vm.eventListener();
             //window.addEventListener('beforeunload', vm.leaving);
             //indow.addEventListener('onblur', vm.leaving);
