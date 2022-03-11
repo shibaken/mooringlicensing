@@ -321,6 +321,7 @@ export default {
   methods: {
     updateAutoRenew: function(renew) {
         this.autoRenew = renew;
+        console.log("updateAutoRenew");
     },
       /*
     addEventListeners: function() {
@@ -333,12 +334,15 @@ export default {
     */
     updateMooringAuth: function(changed) {
         this.mooringOptionsChanged = changed;
+        console.log("updateMooringAuth");
     },
     updateVesselChanged: function(vesselChanged) {
         this.vesselChanged = vesselChanged;
+        console.log("updateVesselChanged");
     },
     updateMooringPreference: function(preferenceChanged) {
         this.mooringPreferenceChanged = preferenceChanged;
+        console.log("updateMooringPreference");
     },
     proposal_refs:function(){
       if(this.applicationTypeCode == 'wla') {
