@@ -1257,6 +1257,7 @@ class Proposal(DirtyFieldsMixin, RevisionedMixin):
                                 invoice_reference=invoice.reference,
                                 payment_type=ApplicationFee.PAYMENT_TYPE_TEMPORARY,
                             )
+                            logger.info('ApplicationFee.id: {} has been created for the Proposal: {}'.format(application_fee.id, self))
 
                             # Link between ApplicationFee and FeeItem(s)
                             for item in fee_items_to_store:
