@@ -458,7 +458,7 @@ export default {
             }
             if (this.$refs.authorised_user_application.$refs.mooring_authorisation) {
                 payload.proposal.keep_existing_mooring =
-                    !this.$refs.authorised_user_application.$refs.mooring_authorisation.change_mooring;
+                    !this.$refs.authorised_user_application.$refs.mooring_authorisation.changeMooring;
                 if (this.$refs.authorised_user_application.$refs.mooring_authorisation.mooringAuthPreference) {
                     payload.proposal.mooring_authorisation_preference =
                         this.$refs.authorised_user_application.$refs.mooring_authorisation.mooringAuthPreference;
@@ -471,7 +471,7 @@ export default {
                     payload.proposal.mooring_id = this.$refs.authorised_user_application.$refs.mooring_authorisation.mooringSiteId;
                 }
             }
-            if(this.amendmentOrRenewal && this.$refs.authorised_user_application.keep_current_vessel){
+            if(this.amendmentOrRenewal && this.$refs.authorised_user_application.keepCurrentVessel){
                 payload.ignore_insurance_check=true;
             }
         // MLA
@@ -493,7 +493,7 @@ export default {
                 // modify if additional proposal attributes required
                 payload.proposal.insurance_choice = this.$refs.mooring_licence_application.$refs.insurance.selectedOption;
             }
-            if(this.amendmentOrRenewal && this.$refs.mooring_licence_application.keep_current_vessel){
+            if(this.amendmentOrRenewal && this.$refs.mooring_licence_application.keepCurrentVessel){
               payload.ignore_insurance_check=true;
             }
         }
