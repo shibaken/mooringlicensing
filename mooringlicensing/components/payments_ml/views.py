@@ -324,6 +324,7 @@ class ApplicationFeeView(TemplateView):
     def post(self, request, *args, **kwargs):
         proposal = self.get_object()
         application_fee = ApplicationFee.objects.create(proposal=proposal, created_by=request.user, payment_type=ApplicationFee.PAYMENT_TYPE_TEMPORARY)
+        logger.info('ApplicationFee.id: {} has been created for the Proposal: {}'.format(application_fee.id, proposal))
 
         try:
             with transaction.atomic():
@@ -574,13 +575,18 @@ class ApplicationFeeSuccessView(TemplateView):
             recipient = proposal.applicant_email
             submitter = proposal.submitter
 
-            if self.request.user.is_authenticated():
-                basket = Basket.objects.filter(status='Submitted', owner=request.user).order_by('-id')[:1]
-            else:
-                basket = Basket.objects.filter(status='Submitted', owner=proposal.submitter).order_by('-id')[:1]
+            try:
+                # For the existing invoice, invoice can be retrieved from the application_fee object
+                invoice = Invoice.objects.get(reference=application_fee.invoice_reference)
+            except Exception as e:
+                # For the non-existing invoice, invoice can be retrieved from the basket
+                if self.request.user.is_authenticated():
+                    basket = Basket.objects.filter(status='Submitted', owner=request.user).order_by('-id')[:1]
+                else:
+                    basket = Basket.objects.filter(status='Submitted', owner=proposal.submitter).order_by('-id')[:1]
+                order = Order.objects.get(basket=basket[0])
+                invoice = Invoice.objects.get(order_number=order.number)
 
-            order = Order.objects.get(basket=basket[0])
-            invoice = Invoice.objects.get(order_number=order.number)
             invoice_ref = invoice.reference
 
             # Update the application_fee object
