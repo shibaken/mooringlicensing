@@ -609,7 +609,8 @@ def submit_vessel_data(instance, request, vessel_data):
     proposals_mla = []
     proposals_aaa = []
     proposals_aua = []
-    approvals = [ah.approval for ah in ApprovalHistory.objects.filter(end_date=None, vessel_ownership__vessel=vessel)]
+    # 20220311 - add exclusion for amendment applications
+    approvals = [ah.approval for ah in ApprovalHistory.objects.filter(end_date=None, vessel_ownership__vessel=vessel).exclude(approval_id=instance.approval_id)]
     approvals = list(dict.fromkeys(approvals))  # remove duplicates
     approvals_wla = []
     approvals_ml = []
