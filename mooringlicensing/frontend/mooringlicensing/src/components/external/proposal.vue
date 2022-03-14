@@ -446,7 +446,6 @@ export default {
             }
         // AUA
         } else if (this.$refs.authorised_user_application) {
-            //this.mooringOptionsChanged = this.$refs.authorised_user_application.change_mooring;
             if (this.$refs.authorised_user_application.$refs.vessels) {
                 payload.vessel = Object.assign({}, this.$refs.authorised_user_application.$refs.vessels.vessel);
                 payload.proposal.temporary_document_collection_id = this.$refs.authorised_user_application.$refs.vessels.temporary_document_collection_id;
