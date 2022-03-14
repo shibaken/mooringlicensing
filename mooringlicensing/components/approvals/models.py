@@ -20,6 +20,7 @@ from ledger.accounts.models import EmailUser, RevisionedMixin
 from ledger.payments.invoice.models import Invoice
 from mooringlicensing.components.approvals.pdf import create_dcv_permit_document, create_dcv_admission_document, \
     create_approval_doc, create_renewal_doc
+from mooringlicensing.components.emails.utils import get_public_url
 from mooringlicensing.components.organisations.models import Organisation
 from mooringlicensing.components.payments_ml.models import StickerActionFee
 from mooringlicensing.components.proposals.models import Proposal, ProposalUserAction, MooringBay, Mooring, \
@@ -899,6 +900,7 @@ class WaitingListAllocation(Approval):
             'vessel_name': self.current_proposal.vessel_details.vessel_name,
             'vessel_length': self.current_proposal.vessel_details.vessel_applicable_length,
             'vessel_draft': self.current_proposal.vessel_details.vessel_draft,
+            'public_url': get_public_url(),
         }
         return context
 
@@ -945,7 +947,8 @@ class AnnualAdmissionPermit(Approval):
             'vessel_rego_no': self.current_proposal.vessel_details.vessel.rego_no,
             'vessel_name': self.current_proposal.vessel_details.vessel_name,
             'vessel_length': self.current_proposal.vessel_details.vessel_applicable_length,
-            'expiry_date': self.expiry_date.strftime('%d/%m/%Y')
+            'expiry_date': self.expiry_date.strftime('%d/%m/%Y'),
+            'public_url': get_public_url(),
         }
         return context
 
@@ -1046,7 +1049,8 @@ class AuthorisedUserPermit(Approval):
             'vessel_length': self.current_proposal.vessel_details.vessel_applicable_length,
             'vessel_draft': self.current_proposal.vessel_details.vessel_draft,
             'moorings': moorings,  # m.name, m.licensee_full_name, m.licensee_email, m.licensee_phone
-            'expiry_date': self.expiry_date.strftime('%d/%m/%Y')
+            'expiry_date': self.expiry_date.strftime('%d/%m/%Y'),
+            'public_url': get_public_url(),
         }
         return context
 
@@ -1245,6 +1249,7 @@ class MooringLicence(Approval):
             'applicant_first_name': self.submitter.first_name,
             'mooring_name': self.mooring.name,
             'authorised_persons': authorised_persons,
+            'public_url': get_public_url(),
         }
 
         return context
@@ -1286,7 +1291,8 @@ class MooringLicence(Approval):
                 'licenced_vessel': licenced_vessel,  # vessel_rego_no, vessel_name, vessel_length, vessel_draft
                 'additional_vessels': additional_vessels,
                 'mooring': self.mooring,
-                'expiry_date': self.expiry_date.strftime('%d/%m/%Y')
+                'expiry_date': self.expiry_date.strftime('%d/%m/%Y'),
+                'public_url': get_public_url(),
             }
             return context
         except Exception as e:
@@ -1601,6 +1607,7 @@ class DcvAdmissionArrival(RevisionedMixin):
             'vessel_rego_no': self.dcv_admission.dcv_vessel.rego_no,
             'vessel_name': self.dcv_admission.dcv_vessel.vessel_name,
             'arrival': self.get_summary(),
+            'public_url': get_public_url(),
         }
         return context
 
@@ -1783,6 +1790,7 @@ class DcvPermit(RevisionedMixin):
             'vessel_rego_no': self.dcv_vessel.rego_no,
             'vessel_name': self.dcv_vessel.vessel_name,
             'expiry_date': self.end_date.strftime('%d/%m/%Y'),
+            'public_url': get_public_url(),
         }
         return context
 
