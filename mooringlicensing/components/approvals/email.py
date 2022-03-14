@@ -80,6 +80,7 @@ def send_auth_user_no_moorings_notification(approval):
         url = ''.join(url.split('-internal'))
 
     context = {
+        'recipient': approval.submitter,
         'public_url': get_public_url(),
         'approval': approval,
         'proposal': proposal,
@@ -118,6 +119,7 @@ def send_auth_user_mooring_removed_notification(approval, mooring_licence):
         url = ''.join(url.split('-internal'))
 
     context = {
+        'recipient': approval.submitter,
         'public_url': get_public_url(),
         'approval': approval,
         'proposal': proposal,
@@ -163,6 +165,7 @@ def send_approval_expire_email_notification(approval):
         url = ''.join(url.split('-internal'))
 
     context = {
+        'recipient': approval.submitter,
         'public_url': get_public_url(),
         'approval': approval,
         'proposal': proposal,
@@ -203,6 +206,7 @@ def send_approval_cancelled_due_to_no_vessels_nominated_mail(approval, request=N
         due_date = approval.current_proposal.vessel_ownership.end_date + relativedelta(months=+6)
 
     context = {
+        'recipient': approval.submitter,
         'public_url': get_public_url(request),
         'approval': approval,
         'due_date': due_date,
@@ -246,6 +250,7 @@ def send_vessel_nomination_reminder_mail(approval, request=None):
     proposal = approval.current_proposal
 
     context = {
+        'recipient': approval.submitter,
         'public_url': get_public_url(request),
         'approval': approval,
         'date_to_nominate_new_vessel': approval.current_proposal.vessel_ownership.end_date + relativedelta(months=+6),
@@ -654,6 +659,7 @@ def send_approval_suspend_email_notification(approval, request=None):
         to_date = approval.suspension_details['to_date'] if 'to_date' in approval.suspension_details else ''
 
     context = {
+        'recipient': approval.submitter,
         'public_url': get_public_url(request),
         'approval': approval,
         'details': details,
