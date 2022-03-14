@@ -304,31 +304,37 @@
                             this.showInsuranceTab = false;
                             this.$emit("updateSubmitText", "Pay / Submit");
                             this.$emit("updateAutoRenew", true);
+                            console.log("here");
                         } else if (this.keepCurrentVessel && this.higherVesselCategory && !this.changeMooring) {
                             this.showPaymentTab = false;
                             this.showInsuranceTab = false;
                             this.$emit("updateSubmitText", "Submit");
                             this.$emit("updateAutoRenew", false);
+                            console.log("here");
                         } else if (!this.keepCurrentVessel && !this.changeMooring) {
                             this.showPaymentTab = false;
                             this.showInsuranceTab = true;
                             this.$emit("updateSubmitText", "Submit");
                             this.$emit("updateAutoRenew", false);
+                            console.log("here");
                         } else if (!this.keepCurrentVessel && !this.higherVesselCategory && this.changeMooring) {
                             this.showPaymentTab = false;
                             this.showInsuranceTab = false;
                             this.$emit("updateSubmitText", "Submit");
                             this.$emit("updateAutoRenew", false);
+                            console.log("here");
                         } else if (this.keepCurrentVessel && this.changeMooring) {
                             this.showPaymentTab = false;
                             this.showInsuranceTab = true;
                             this.$emit("updateSubmitText", "Submit");
                             this.$emit("updateAutoRenew", false);
+                            console.log("here");
                         } else if (this.higherVesselCategory && this.changeMooring) {
                             this.showPaymentTab = false;
                             this.showInsuranceTab = false;
                             this.$emit("updateSubmitText", "Submit");
                             this.$emit("updateAutoRenew", false);
+                            console.log("here");
                         }
                     });
                 }
