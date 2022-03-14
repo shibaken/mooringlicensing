@@ -1242,6 +1242,8 @@ class MooringLicence(Approval):
                 authorised_person['email_address'] = aup.submitter.email
                 authorised_persons.append(authorised_person)
 
+        today = datetime.now(pytz.timezone(settings.TIME_ZONE)).date()
+
         context = {
             'approval': self,
             'application': self.current_proposal,
@@ -1250,6 +1252,7 @@ class MooringLicence(Approval):
             'mooring_name': self.mooring.name,
             'authorised_persons': authorised_persons,
             'public_url': get_public_url(),
+            'doc_generated_date': today.strftime('%d/%m/%Y'),
         }
 
         return context
