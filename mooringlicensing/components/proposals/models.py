@@ -293,6 +293,8 @@ class Proposal(DirtyFieldsMixin, RevisionedMixin):
     temporary_document_collection_id = models.IntegerField(blank=True, null=True)
     # AUA amendment
     keep_existing_mooring = models.BooleanField(default=False)
+    # MLA amendment
+    keep_existing_vessel = models.BooleanField(default=True)
 
     fee_season = models.ForeignKey('FeeSeason', null=True, blank=True)  # In some case, proposal doesn't have any fee related objects.  Which results in the impossibility to retrieve season, start_date, end_date, etc.
                                                                         # To prevent that, fee_season is used in order to store those data.
@@ -1170,7 +1172,14 @@ class Proposal(DirtyFieldsMixin, RevisionedMixin):
                 self.save()
 
                 # write approval history
-                approval.write_approval_history()
+                if self.proposal_type == ProposalType.objects.filter(code=PROPOSAL_TYPE_RENEWAL):
+                    approval.write_approval_history('renewal application {}'.format(self.lodgement_number))
+                elif self.proposal_type == ProposalType.objects.filter(code=PROPOSAL_TYPE_AMENDMENT):
+                    approval.write_approval_history('amendment application {}'.format(self.lodgement_number))
+                elif self.approval and self.approval.reissued:
+                    approval.write_approval_history('reissue via application {}'.format(self.lodgement_number))
+                else:
+                    approval.write_approval_history()
                 # set wla order
                 approval = approval.set_wla_order()
 
@@ -2379,12 +2388,21 @@ class AuthorisedUserApplication(Proposal):
             self.log_user_action(ProposalUserAction.ACTION_APPROVE_APPLICATION.format(self.id))
 
         # Write approval history
-        if existing_mooring_count and approval.mooringonapproval_set.count() > existing_mooring_count:
-            approval.write_approval_history('mooring_add')
-        elif created:
-            approval.write_approval_history('new')
+        if self.proposal_type == ProposalType.objects.filter(code=PROPOSAL_TYPE_RENEWAL):
+            approval.write_approval_history('renewal application {}'.format(self.lodgement_number))
+        elif self.proposal_type == ProposalType.objects.filter(code=PROPOSAL_TYPE_AMENDMENT):
+            approval.write_approval_history('amendment application {}'.format(self.lodgement_number))
+        elif self.approval and self.approval.reissued:
+            approval.write_approval_history('reissue via application {}'.format(self.lodgement_number))
         else:
             approval.write_approval_history()
+
+        #if existing_mooring_count and approval.mooringonapproval_set.count() > existing_mooring_count:
+        #    approval.write_approval_history('mooring_add')
+        #elif created:
+        #    approval.write_approval_history('new')
+        #else:
+        #    approval.write_approval_history()
 
         return approval, created
 
@@ -2760,12 +2778,22 @@ class MooringLicenceApplication(Proposal):
             else:
                 self.log_user_action(ProposalUserAction.ACTION_APPROVE_APPLICATION.format(self.id))
 
-            if existing_mooring_licence_vessel_count and existing_mooring_licence_vessel_count < approval.vesselownershiponapproval_set.count():
-                approval.write_approval_history('vessel_add')
-            elif created:
-                approval.write_approval_history('new')
+            # write approval history
+            if self.proposal_type == ProposalType.objects.filter(code=PROPOSAL_TYPE_RENEWAL):
+                approval.write_approval_history('renewal application {}'.format(self.lodgement_number))
+            elif self.proposal_type == ProposalType.objects.filter(code=PROPOSAL_TYPE_AMENDMENT):
+                approval.write_approval_history('amendment application {}'.format(self.lodgement_number))
+            elif self.approval and self.approval.reissued:
+                approval.write_approval_history('reissue via application {}'.format(self.lodgement_number))
             else:
                 approval.write_approval_history()
+
+            #if existing_mooring_licence_vessel_count and existing_mooring_licence_vessel_count < approval.vesselownershiponapproval_set.count():
+            #    approval.write_approval_history('vessel_add')
+            #elif created:
+            #    approval.write_approval_history('new')
+            #else:
+            #    approval.write_approval_history()
             return approval, created
         except Exception as e:
             print(e)

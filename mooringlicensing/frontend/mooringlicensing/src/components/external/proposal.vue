@@ -446,7 +446,6 @@ export default {
             }
         // AUA
         } else if (this.$refs.authorised_user_application) {
-            //this.mooringOptionsChanged = this.$refs.authorised_user_application.change_mooring;
             if (this.$refs.authorised_user_application.$refs.vessels) {
                 payload.vessel = Object.assign({}, this.$refs.authorised_user_application.$refs.vessels.vessel);
                 payload.proposal.temporary_document_collection_id = this.$refs.authorised_user_application.$refs.vessels.temporary_document_collection_id;
@@ -495,6 +494,8 @@ export default {
             }
             if(this.amendmentOrRenewal && this.$refs.mooring_licence_application.keepCurrentVessel){
               payload.ignore_insurance_check=true;
+            } else if(this.amendmentOrRenewal && !this.$refs.mooring_licence_application.keepCurrentVessel){
+              payload.keep_existing_vessel=false;
             }
         }
 
