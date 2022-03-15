@@ -495,7 +495,7 @@ export default {
             if(this.amendmentOrRenewal && this.$refs.mooring_licence_application.keepCurrentVessel){
               payload.ignore_insurance_check=true;
             } else if(this.amendmentOrRenewal && !this.$refs.mooring_licence_application.keepCurrentVessel){
-              payload.keep_existing_vessel=false;
+              payload.proposal.keep_existing_vessel=false;
             }
         }
 

@@ -680,6 +680,7 @@ class InternalProposalSerializer(BaseProposalSerializer):
     current_vessels_rego_list = serializers.SerializerMethodField()
     application_type_code = serializers.SerializerMethodField()
     authorised_user_moorings_str = serializers.SerializerMethodField()
+    waiting_list_application_id = serializers.SerializerMethodField()
 
     class Meta:
         model = Proposal
@@ -749,11 +750,39 @@ class InternalProposalSerializer(BaseProposalSerializer):
                 'current_vessels_rego_list',
                 'application_type_code',
                 'authorised_user_moorings_str',
+                'keep_existing_mooring',
+                'keep_existing_vessel',
+                # draft status
+                'rego_no',
+                'vessel_id',
+                'vessel_details_id',
+                'vessel_ownership_id',
+                'vessel_type',
+                'vessel_name',
+                'vessel_length',
+                'vessel_draft',
+                'vessel_beam',
+                'vessel_weight',
+                'berth_mooring',
+                'dot_name',
+                'percentage',
+                #'editable_vessel_details',
+                'individual_owner',
+                'company_ownership_name',
+                'company_ownership_percentage',
+                'waiting_list_application_id',
+                'pending_amendment_request',
                 )
         read_only_fields = (
             'documents',
             'requirements',
         )
+
+    def get_waiting_list_application_id(self, obj):
+        wla_id = None
+        if obj.waiting_list_allocation:
+            wla_id = obj.waiting_list_allocation.current_proposal.id
+        return wla_id
 
     def get_application_type_code(self, obj):
         return obj.application_type_code
