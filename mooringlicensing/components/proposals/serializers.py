@@ -224,6 +224,7 @@ class BaseProposalSerializer(serializers.ModelSerializer):
                 'previous_application_vessel_ownership_obj',
                 'max_vessel_length_with_no_payment',
                 'keep_existing_mooring',
+                'keep_existing_vessel',
                 )
         read_only_fields=('documents',)
 
@@ -549,6 +550,7 @@ class SaveMooringLicenceApplicationSerializer(serializers.ModelSerializer):
                 'customer_status',
                 'processing_status',
                 'temporary_document_collection_id',
+                'keep_existing_vessel',
                 )
         read_only_fields=('id',)
 
@@ -646,6 +648,7 @@ class SaveDraftProposalVesselSerializer(serializers.ModelSerializer):
                 'dot_name',
                 'temporary_document_collection_id',
                 'keep_existing_mooring',
+                'keep_existing_vessel',
                 )
 
 

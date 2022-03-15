@@ -350,16 +350,7 @@ class Approval(RevisionedMixin):
 
     def write_approval_history(self, reason=None):
         history_count = self.approvalhistory_set.count()
-        if reason:
-            new_approval_history_entry = ApprovalHistory.objects.create(
-                vessel_ownership=self.current_proposal.vessel_ownership,
-                approval=self,
-                proposal=self.current_proposal,
-                start_date=self.issue_date,
-                approval_letter=self.licence_document,
-                reason=reason,
-            )
-        elif not history_count:
+        if not history_count:
             new_approval_history_entry = ApprovalHistory.objects.create(
                 vessel_ownership=self.current_proposal.vessel_ownership,
                 approval=self,
@@ -367,6 +358,15 @@ class Approval(RevisionedMixin):
                 start_date=self.issue_date,
                 approval_letter=self.licence_document,
                 reason='new',
+            )
+        elif reason:
+            new_approval_history_entry = ApprovalHistory.objects.create(
+                vessel_ownership=self.current_proposal.vessel_ownership,
+                approval=self,
+                proposal=self.current_proposal,
+                start_date=self.issue_date,
+                approval_letter=self.licence_document,
+                reason=reason,
             )
         else:
             new_approval_history_entry = ApprovalHistory.objects.create(
@@ -1058,7 +1058,7 @@ class AuthorisedUserPermit(Approval):
         kwargs['no_revision'] = True
         super(Approval, self).save(*args, **kwargs)
 
-    def internal_reissue(self):
+    def internal_reissue(self, mooring_licence):
         ## now reissue approval
         self.current_proposal.processing_status = 'printing_sticker'
         self.current_proposal.save()
@@ -1067,6 +1067,7 @@ class AuthorisedUserPermit(Approval):
         # Create a log entry for the proposal and approval
         self.current_proposal.log_user_action(ProposalUserAction.ACTION_REISSUE_APPROVAL.format(self.lodgement_number))
         self.approval.log_user_action(ApprovalUserAction.ACTION_REISSUE_APPROVAL.format(self.lodgement_number))
+        self.approval.log_user_action(ApprovalUserAction.ACTION_REISSUE_APPROVAL_ML.format(mooring_licence.lodgement_number))
         ## final approval
         self.current_proposal.final_approval()
 
@@ -1084,7 +1085,7 @@ class AuthorisedUserPermit(Approval):
             if moa.mooring == mooring_licence.mooring:
                 ## send email to auth user
                 send_auth_user_mooring_removed_notification(self.approval, mooring_licence)
-        self.internal_reissue()
+        self.internal_reissue(mooring_licence)
 
     @property
     def current_moorings(self):
@@ -1476,6 +1477,7 @@ class ApprovalUserAction(UserAction):
     ACTION_RENEW_APPROVAL = "Create renewal Application for licence {}"
     ACTION_AMEND_APPROVAL = "Create amendment Application for licence {}"
     ACTION_REISSUE_APPROVAL = "Reissue licence {}"
+    ACTION_REISSUE_APPROVAL_ML = "Reissued due to change in Mooring Licence {}"
 
     class Meta:
         app_label = 'mooringlicensing'
