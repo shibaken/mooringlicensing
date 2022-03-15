@@ -11,7 +11,6 @@ from email.header import decode_header, make_header
 from django.core.files.base import ContentFile
 
 from mooringlicensing.components.approvals.models import Sticker
-from mooringlicensing.components.main.utils import sticker_export, email_stickers_document
 
 import logging
 
