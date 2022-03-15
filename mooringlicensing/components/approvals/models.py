@@ -1110,12 +1110,26 @@ class AuthorisedUserPermit(Approval):
                 moas_to_be_reallocated.append(moa)
 
         # Find all the stickers to be replaced
-        moas_removed = self.mooringonapproval_set.\
-            filter(Q(end_date__isnull=False) | ~Q(mooring__mooring_licence__status=MooringLicence.APPROVAL_STATUS_CURRENT)).\
-            filter(sticker__status__in=[Sticker.STICKER_STATUS_CURRENT, Sticker.STICKER_STATUS_AWAITING_PRINTING])
-        for moa in moas_removed:
-            if moa.sticker not in stickers_to_be_replaced:
-                stickers_to_be_replaced.append(moa.sticker)
+        moas_removed = []
+        moas_current = []
+        if proposal.proposal_type.code == PROPOSAL_TYPE_RENEWAL:
+            # When renewal all the current/awaiting_printing stickers to be replaced
+            # All the sticker gets 'expired' status once payment made
+            moas_current = self.mooringonapproval_set.\
+                filter(Q(end_date__isnull=True) | Q(mooring__mooring_licence__status=MooringLicence.APPROVAL_STATUS_CURRENT)).\
+                filter(sticker__status__in=[Sticker.STICKER_STATUS_CURRENT, Sticker.STICKER_STATUS_AWAITING_PRINTING])
+            for moa in moas_current:
+                if moa.sticker not in stickers_to_be_replaced:
+                    stickers_to_be_replaced.append(moa.sticker)
+                    moa.sticker.replaced_for_renewal = True
+                    moa.sticker.save()
+        else:
+            moas_removed = self.mooringonapproval_set.\
+                filter(Q(end_date__isnull=False) | ~Q(mooring__mooring_licence__status=MooringLicence.APPROVAL_STATUS_CURRENT)).\
+                filter(sticker__status__in=[Sticker.STICKER_STATUS_CURRENT, Sticker.STICKER_STATUS_AWAITING_PRINTING])
+            for moa in moas_removed:
+                if moa.sticker not in stickers_to_be_replaced:
+                    stickers_to_be_replaced.append(moa.sticker)
 
         # Handle vessel changes
         self.handle_vessel_changes(moas_to_be_reallocated, stickers_to_be_replaced)
@@ -1124,7 +1138,9 @@ class AuthorisedUserPermit(Approval):
         for sticker in stickers_to_be_replaced:
             stickers_to_be_returned.append(sticker)
             for moa in sticker.mooringonapproval_set.all():
+                # This sticker is possibly to be removed, but it may have current mooring(s)
                 if moa not in moas_removed and moa not in moas_to_be_reallocated:
+                    # This moa is not removed, but reallocated
                     moas_to_be_reallocated.append(moa)
 
         if len(moas_to_be_reallocated) > 0:
@@ -1184,7 +1200,7 @@ class AuthorisedUserPermit(Approval):
         sticker_to_be_filled = None
         for moa_to_be_replaced in moas_to_be_replaced:
             if not sticker_to_be_filled or sticker_to_be_filled.mooringonapproval_set.count() % 4 == 0:
-                # If there is no stickers to fill, create a new sticker
+                # If there is no stickers to fill, or there is a sticker but already be filled with 4 moas, create a new sticker
                 sticker_to_be_filled = Sticker.objects.create(
                     approval=self,
                     vessel_ownership=moa_to_be_replaced.sticker.vessel_ownership if moa_to_be_replaced.sticker else proposal.vessel_ownership,
@@ -1192,7 +1208,12 @@ class AuthorisedUserPermit(Approval):
                     proposal_initiated=proposal,
                     fee_season=self.latest_applied_season,
                 )
-            moa_to_be_replaced.sticker = sticker_to_be_filled  # Update moa
+            if moa_to_be_replaced.sticker.replaced_for_renewal:
+                # Set the status of old sticker to 'expired'
+                moa_to_be_replaced.sticker.status = Sticker.STICKER_STATUS_EXPIRED
+                moa_to_be_replaced.sticker.save()
+            # Update moa by a new sticker
+            moa_to_be_replaced.sticker = sticker_to_be_filled
             moa_to_be_replaced.save()
 
 
