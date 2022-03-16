@@ -164,7 +164,7 @@
                 keepCurrentVessel: true,
                 showPaymentTab: false,
                 showInsuranceTab: true,
-                higherVesselCategory: false;
+                higherVesselCategory: false,
             }
         },
         components: {
