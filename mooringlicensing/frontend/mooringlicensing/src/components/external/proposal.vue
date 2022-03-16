@@ -808,6 +808,9 @@ export default {
     },
 
     post_and_redirect: function(url, postData) {
+        console.log('url: ' + url)
+        console.log('postData: ')
+        console.log(postData)
         /* http.post and ajax do not allow redirect from Django View (post method),
            this function allows redirect by mimicking a form submit.
 

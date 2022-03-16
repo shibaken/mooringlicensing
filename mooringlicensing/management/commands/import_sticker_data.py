@@ -11,7 +11,6 @@ from email.header import decode_header, make_header
 from django.core.files.base import ContentFile
 
 from mooringlicensing.components.approvals.models import Sticker
-from mooringlicensing.components.main.utils import sticker_export, email_stickers_document
 
 import logging
 
@@ -238,6 +237,10 @@ def process_sticker_printing_response():
                     if sticker.status in (Sticker.STICKER_STATUS_AWAITING_PRINTING, Sticker.STICKER_STATUS_READY):
                         # sticker shoudl not be in READY status though.
                         sticker.status = Sticker.STICKER_STATUS_CURRENT
+                        if sticker.sticker_to_replace:
+                            # When this sticker is created for renewal, set 'expiry' status to the old sticker.
+                            sticker.sticker_to_replace.status = Sticker.STICKER_STATUS_EXPIRED
+                            sticker.sticker_to_replace.save()
                     sticker.save()
 
                     updates.append(sticker.number)

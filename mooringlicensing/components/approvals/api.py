@@ -1110,7 +1110,7 @@ class StickerViewSet(viewsets.ModelViewSet):
         serializer = StickerSerializer(sticker)
 
         # Write approval history
-        sticker.approval.write_approval_history()
+        # sticker.approval.write_approval_history()
 
         return Response({'sticker': serializer.data})
 
