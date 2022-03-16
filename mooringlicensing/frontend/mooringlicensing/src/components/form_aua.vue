@@ -104,7 +104,7 @@
                   id="mooring_authorisation"
                   :id="'mooringAuthorisation' + mooringAuthorisationUuid"
                   :key="'mooringAuthorisation' + mooringAuthorisationUuid"
-                  :changeMooring=changeMooring
+                  :changeMooring="changeMooring"
                   :newAua="newAua"
                   ref="mooring_authorisation"
                   :readonly="readonly"
