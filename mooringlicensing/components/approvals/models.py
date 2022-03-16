@@ -994,14 +994,26 @@ class AnnualAdmissionPermit(Approval):
                 )
             stickers_required.append(sticker)
 
-        # Calculate the stickers which are no longer needed.  Some stickers could be in the 'awaiting_printing'/'to_be_returned' status.
-        stickers_to_be_returned = [sticker for sticker in stickers_present if sticker not in stickers_required]
+        if proposal.proposal_type.code == PROPOSAL_TYPE_RENEWAL:
+            for sticker_to_be_replaced in stickers_required:
+                new_sticker = Sticker.objects.create(
+                    approval=self,
+                    vessel_ownership=sticker_to_be_replaced.vessel_ownership,
+                    fee_constructor=proposal.fee_constructor if proposal.fee_constructor else sticker_to_be_replaced.fee_constructor if sticker_to_be_replaced else None,
+                    proposal_initiated=proposal,
+                    fee_season=self.latest_applied_season,
+                )
+                new_sticker.sticker_to_replace = sticker_to_be_replaced
+                new_sticker.save()
 
-        # Update sticker status
-        self._handle_stickers_to_be_removed(stickers_to_be_returned)
+        else:
+            # Calculate the stickers which are no longer needed.  Some stickers could be in the 'awaiting_printing'/'to_be_returned' status.
+            stickers_to_be_returned = [sticker for sticker in stickers_present if sticker not in stickers_required]
 
-        return [], stickers_to_be_returned
+            # Update sticker status
+            self._handle_stickers_to_be_removed(stickers_to_be_returned)
 
+            return [], stickers_to_be_returned
 
 class AuthorisedUserPermit(Approval):
     approval = models.OneToOneField(Approval, parent_link=True)
@@ -1279,7 +1291,7 @@ class MooringLicence(Approval):
                 authorised_person['email_address'] = aup.submitter.email
                 authorised_persons.append(authorised_person)
 
-        today = datetime.now(pytz.timezone(settings.TIME_ZONE)).date()
+        today = datetime.datetime.now(pytz.timezone(settings.TIME_ZONE)).date()
 
         context = {
             'approval': self,
@@ -1400,13 +1412,26 @@ class MooringLicence(Approval):
                 )
             stickers_required.append(sticker)
 
-        # Calculate the stickers which are no longer needed.  Some stickers could be in the 'awaiting_printing'/'to_be_returned' status.
-        stickers_to_be_returned = [sticker for sticker in stickers_present if sticker not in stickers_required]
+        if proposal.proposal_type.code == PROPOSAL_TYPE_RENEWAL:
+            for sticker_to_be_replaced in stickers_required:
+                new_sticker = Sticker.objects.create(
+                    approval=self,
+                    vessel_ownership=sticker_to_be_replaced.vessel_ownership,
+                    fee_constructor=proposal.fee_constructor if proposal.fee_constructor else sticker_to_be_replaced.fee_constructor if sticker_to_be_replaced else None,
+                    proposal_initiated=proposal,
+                    fee_season=self.latest_applied_season,
+                )
+                new_sticker.sticker_to_replace = sticker_to_be_replaced
+                new_sticker.save()
 
-        # Update sticker status
-        self._handle_stickers_to_be_removed(stickers_to_be_returned)
+        else:
+            # Calculate the stickers which are no longer needed.  Some stickers could be in the 'awaiting_printing'/'to_be_returned' status.
+            stickers_to_be_returned = [sticker for sticker in stickers_present if sticker not in stickers_required]
 
-        return [], stickers_to_be_returned
+            # Update sticker status
+            self._handle_stickers_to_be_removed(stickers_to_be_returned)
+
+            return [], stickers_to_be_returned
 
     def current_vessel_attributes(self, attribute=None):
         attribute_list = []
