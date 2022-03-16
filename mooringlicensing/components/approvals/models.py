@@ -143,23 +143,24 @@ class VesselOwnershipOnApproval(RevisionedMixin):
 
 
 class ApprovalHistory(RevisionedMixin):
-    REASON_NEW = 'new'
-    REASON_REPLACEMENT_STICKER = 'replacement_sticker'
-    REASON_VESSEL_ADD = 'vessel_add'
-    REASON_VESSEL_SOLD = 'vessel_sold'
-    REASON_MOORING_ADD = 'mooring_add'
-    REASON_MOORING_SWAP = 'mooring_swap'
+    #REASON_NEW = 'new'
+    #REASON_REPLACEMENT_STICKER = 'replacement_sticker'
+    #REASON_VESSEL_ADD = 'vessel_add'
+    #REASON_VESSEL_SOLD = 'vessel_sold'
+    #REASON_MOORING_ADD = 'mooring_add'
+    #REASON_MOORING_SWAP = 'mooring_swap'
 
-    REASON_CHOICES = (
-        (REASON_NEW, 'New'),
-        (REASON_REPLACEMENT_STICKER, 'Replacement sticker'),
-        (REASON_VESSEL_ADD, 'Vessel added'),
-        (REASON_VESSEL_SOLD, 'Vessel sold'),
-        (REASON_MOORING_ADD, 'New mooring'),
-        (REASON_MOORING_SWAP, 'Mooring swap'),
-    )
+    #REASON_CHOICES = (
+    #    (REASON_NEW, 'New'),
+    #    (REASON_REPLACEMENT_STICKER, 'Replacement sticker'),
+    #    (REASON_VESSEL_ADD, 'Vessel added'),
+    #    (REASON_VESSEL_SOLD, 'Vessel sold'),
+    #    (REASON_MOORING_ADD, 'New mooring'),
+    #    (REASON_MOORING_SWAP, 'Mooring swap'),
+    #)
 
-    reason = models.CharField(max_length=40, choices=REASON_CHOICES, blank=True, null=True)
+    #reason = models.CharField(max_length=40, choices=REASON_CHOICES, blank=True, null=True)
+    reason = models.CharField(max_length=100, blank=True, null=True)
                                        #default=REASON_CHOICES[0][0])
     approval = models.ForeignKey('Approval')
     # can be null due to requirement to allow null vessels on renewal/amendment applications
