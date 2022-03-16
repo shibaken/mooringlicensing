@@ -170,6 +170,7 @@
                 //mooringPreferenceChanged: false,
                 //vesselLength: null,
                 showPaymentTab: false,
+                higherVesselCategory: false,
             }
         },
         components: {
@@ -237,25 +238,16 @@
                 //this.updateAmendmentRenewalProperties();
             },
             updateVesselLength: function(length) {
-                let higherCategory = false;
                 if (this.is_external && this.proposal) {
-                    if (!this.proposal.previous_application_id) {
-                        // new application
-                        higherCategory = true;
-                    } else if (this.proposal.max_vessel_length_with_no_payment && 
+                    if (this.proposal.max_vessel_length_with_no_payment &&
                         this.proposal.max_vessel_length_with_no_payment <= length) {
                         // vessel length is in higher category
-                        higherCategory = true;
+                        this.higherVesselCategory = true;
+                    } else {
+                        this.higherVesselCategory = false;
                     }
                 }
                 this.updateAmendmentRenewalProperties();
-                /*
-                console.log(higherCategory);
-                if (higherCategory) {
-                    this.showPaymentTab = true;
-                    this.$emit("updateSubmitText", "Pay / Submit");
-                }
-                */
             },
             resetCurrentVessel: function(keep) {
                 this.keepCurrentVessel = keep;
