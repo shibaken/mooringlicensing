@@ -1141,6 +1141,7 @@ def send_au_summary_to_ml_holder(approval, request):
 
     proposal = approval.current_proposal
     context = {
+        'public_url': get_public_url(request),
         'approval': approval,
         'recipient': proposal.submitter,
     }
