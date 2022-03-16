@@ -292,7 +292,7 @@ class Proposal(DirtyFieldsMixin, RevisionedMixin):
     invitee_reminder_sent = models.BooleanField(default=False)
     temporary_document_collection_id = models.IntegerField(blank=True, null=True)
     # AUA amendment
-    keep_existing_mooring = models.BooleanField(default=False)
+    keep_existing_mooring = models.BooleanField(default=True)
     # MLA amendment
     keep_existing_vessel = models.BooleanField(default=True)
 
