@@ -104,7 +104,7 @@
                   id="mooring_authorisation"
                   :id="'mooringAuthorisation' + mooringAuthorisationUuid"
                   :key="'mooringAuthorisation' + mooringAuthorisationUuid"
-                  :change_mooring=changeMooring
+                  :changeMooring=changeMooring
                   :newAua="newAua"
                   ref="mooring_authorisation"
                   :readonly="readonly"
@@ -327,7 +327,7 @@
                             console.log("here");
                         } else if (this.keepCurrentVessel && this.changeMooring) {
                             this.showPaymentTab = false;
-                            this.showInsuranceTab = true;
+                            this.showInsuranceTab = false;
                             this.$emit("updateSubmitText", "Submit");
                             this.$emit("updateAutoRenew", false);
                             console.log("here");
