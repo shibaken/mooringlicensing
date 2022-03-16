@@ -70,7 +70,7 @@
                   :profile="profileVar"
                   :id="'proposalStartVessels' + uuid"
                   :key="'proposalStartVessels' + uuid"
-                  :keep_current_vessel=keep_current_vessel
+                  :keep_current_vessel=keepCurrentVessel
                   ref="vessels"
                   :readonly="readonly"
                   :is_internal="is_internal"
@@ -161,8 +161,9 @@
                 values:null,
                 profile: {},
                 uuid: 0,
-                keep_current_vessel: true,
+                keepCurrentVessel: true,
                 showPaymentTab: false,
+                showInsuranceTab: true,
             }
         },
         components: {
@@ -191,6 +192,7 @@
                 }
                 return text;
             },
+            /*
             showInsuranceTab: function(){
                 let show=true;
                 if(this.proposal && this.proposal.proposal_type && this.proposal.proposal_type.code !== 'new' && this.keep_current_vessel)
@@ -199,6 +201,7 @@
                 }
                 return show;
             },
+            */
         },
         methods:{
             vesselChanged: async function(vesselChanged) {
@@ -216,17 +219,86 @@
                         higherCategory = true;
                     }
                 }
+                this.updateAmendmentRenewalProperties();
+                /*
                 console.log(higherCategory);
                 if (higherCategory) {
                     this.showPaymentTab = true;
                     this.$emit("updateSubmitText", "Pay / Submit");
                 }
+                */
             },
 
             resetCurrentVessel: function(keep) {
-                this.keep_current_vessel = keep;
+                this.keepCurrentVessel = keep;
                 this.uuid++
+                this.updateAmendmentRenewalProperties();
             },
+            updateAmendmentRenewalProperties: function() {
+                console.log('updateAmendmentRenewalProperties in form_aaa.vue')
+                if (this.proposal && this.proposal.proposal_type.code === 'amendment') {
+                    this.$nextTick(() => {
+                        if (this.keepCurrentVessel && this.higherVesselCategory) {
+                            this.showPaymentTab = true;
+                            this.showInsuranceTab = false;
+                            this.$emit("updateSubmitText", "Pay / Submit");
+                        } else if (!this.keepCurrentVessel && !higherVesselCategory) {
+                            this.showPaymentTab = false;
+                            this.showInsuranceTab = true;
+                            this.$emit("updateSubmitText", "Submit");
+                        } else if (!this.keepCurrentVessel && higherVesselCategory) {
+                            this.showPaymentTab = true;
+                            this.showInsuranceTab = true;
+                            this.$emit("updateSubmitText", "Pay / Submit");
+                        } else {
+                            this.showPaymentTab = false;
+                            this.showInsuranceTab = false;
+                            this.$emit("updateSubmitText", "Submit");
+                        }
+                    });
+                } else if (this.proposal && this.proposal.proposal_type.code === 'renewal') {
+                    this.$nextTick(() => {
+                        if (!this.keepCurrentVessel) {
+                            this.showPaymentTab = true;
+                            this.showInsuranceTab = true;
+                            this.$emit("updateSubmitText", "Pay / Submit");
+                        } else {
+                            this.showPaymentTab = true;
+                            this.showInsuranceTab = false;
+                            this.$emit("updateSubmitText", "Pay / Submit");
+                        }
+                    });
+                }
+            },
+            /*
+            updateAmendmentRenewalProperties: function() {
+                console.log('updateAmendmentRenewalProperties in form_aaa.vue')
+                if (this.proposal && ['renewal', 'amendment'].includes(this.proposal.proposal_type.code)) {
+                    this.$nextTick(() => {
+                        if (this.keepCurrentVessel && !this.higherVesselCategory && !this.changeMooring) {
+                            this.showPaymentTab = true;
+                            this.showInsuranceTab = false;
+                            this.$emit("updateSubmitText", "Pay / Submit");
+                            this.$emit("updateAutoRenew", true);
+                            console.log("here");
+                        } else if (this.keepCurrentVessel && this.higherVesselCategory && !this.changeMooring) {
+                            this.showPaymentTab = false;
+                            this.showInsuranceTab = false;
+                            this.$emit("updateSubmitText", "Submit");
+                            this.$emit("updateAutoRenew", false);
+                            console.log("here");
+                        } else if (!this.keepCurrentVessel && !this.changeMooring) {
+                            this.showPaymentTab = false;
+                            this.showInsuranceTab = true;
+                            this.$emit("updateSubmitText", "Submit");
+                            this.$emit("updateAutoRenew", false);
+                            console.log("here");
+                        }
+                    });
+                }
+            },
+            */
+
             populateProfile: function(profile) {
                 this.profile = Object.assign({}, profile);
             },
@@ -272,7 +344,8 @@
             let vm = this;
             vm.set_tabs();
             vm.form = document.forms.new_proposal;
-            this.updateVesselLength();
+            //this.updateVesselLength();
+            this.updateAmendmentRenewalProperties();
             //vm.eventListener();
             //window.addEventListener('beforeunload', vm.leaving);
             //indow.addEventListener('onblur', vm.leaving);
