@@ -1103,6 +1103,7 @@ class AuthorisedUserPermit(Approval):
         moas_to_be_reallocated = []  # MooringOnApproval objects to have new stickers
         stickers_to_be_returned = []  # Stickers to be returned
         stickers_to_be_replaced = []  # Stickers to be replaced by new stickers.  Temporarily used
+        stickers_to_be_replaced_for_renewal = []
 
         # Find all the moorings which should be assigned to the new stickers
         new_mooring_on_approval = MooringOnApproval.objects.filter(approval=self, sticker__isnull=True)  # New moa doesn't have stickers.
@@ -1122,8 +1123,9 @@ class AuthorisedUserPermit(Approval):
             for moa in moas_current:
                 if moa.sticker not in stickers_to_be_replaced:
                     stickers_to_be_replaced.append(moa.sticker)
-                    moa.sticker.replaced_for_renewal = True
-                    moa.sticker.save()
+                    # moa.sticker.replaced_for_renewal = True
+                    # moa.sticker.save()
+                    stickers_to_be_replaced_for_renewal.append(moa.sticker)
         else:
             moas_removed = self.mooringonapproval_set.\
                 filter(Q(end_date__isnull=False) | ~Q(mooring__mooring_licence__status=MooringLicence.APPROVAL_STATUS_CURRENT)).\
@@ -1165,7 +1167,7 @@ class AuthorisedUserPermit(Approval):
                     raise ValueError('AUP: {} has more than one new moorings without sticker'.format(self.lodgement_number))
 
         # Finally assign mooring(s) to new sticker(s)
-        self._assign_to_new_stickers(moas_to_be_reallocated, proposal)
+        self._assign_to_new_stickers(moas_to_be_reallocated, proposal, stickers_to_be_replaced_for_renewal)
         self._handle_stickers_to_be_removed(stickers_to_be_returned)
 
         return moas_to_be_reallocated, stickers_to_be_returned
@@ -1197,11 +1199,11 @@ class AuthorisedUserPermit(Approval):
                 if moa not in moas_to_be_reallocated:
                     moas_to_be_reallocated.append(moa)
 
-    def _assign_to_new_stickers(self, moas_to_be_replaced, proposal):
+    def _assign_to_new_stickers(self, moas_to_be_replaced, proposal, stickers_to_be_replaced_for_renewal=[]):
         sticker_to_be_filled = None
         for moa_to_be_replaced in moas_to_be_replaced:
             if not sticker_to_be_filled or sticker_to_be_filled.mooringonapproval_set.count() % 4 == 0:
-                # If there is no stickers to fill, or there is a sticker but already be filled with 4 moas, create a new sticker
+                # There is no stickers to fill, or there is a sticker but already be filled with 4 moas, create a new sticker
                 sticker_to_be_filled = Sticker.objects.create(
                     approval=self,
                     vessel_ownership=moa_to_be_replaced.sticker.vessel_ownership if moa_to_be_replaced.sticker else proposal.vessel_ownership,
@@ -1209,10 +1211,10 @@ class AuthorisedUserPermit(Approval):
                     proposal_initiated=proposal,
                     fee_season=self.latest_applied_season,
                 )
-            if moa_to_be_replaced.sticker.replaced_for_renewal:
+            if moa_to_be_replaced.sticker in stickers_to_be_replaced_for_renewal:
                 # Set the status of old sticker to 'expired'
-                moa_to_be_replaced.sticker.status = Sticker.STICKER_STATUS_EXPIRED
-                moa_to_be_replaced.sticker.save()
+                sticker_to_be_filled.sticker_to_replace = moa_to_be_replaced.sticker
+                sticker_to_be_filled.save()
             # Update moa by a new sticker
             moa_to_be_replaced.sticker = sticker_to_be_filled
             moa_to_be_replaced.save()
