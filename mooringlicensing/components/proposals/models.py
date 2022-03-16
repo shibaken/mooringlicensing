@@ -1170,6 +1170,14 @@ class Proposal(DirtyFieldsMixin, RevisionedMixin):
                     self.processing_status = Proposal.PROCESSING_STATUS_APPROVED
                     self.customer_status = Proposal.CUSTOMER_STATUS_APPROVED
                 self.save()
+                # set wla order
+                approval = approval.set_wla_order()
+
+                # send Proposal approval email with attachment
+                approval.generate_doc()
+                send_application_approved_or_declined_email(self, 'approved', request, stickers_to_be_returned)
+                self.save(version_comment='Final Approval: {}'.format(self.approval.lodgement_number))
+                self.approval.documents.all().update(can_delete=False)
 
                 # write approval history
                 if self.proposal_type == ProposalType.objects.filter(code=PROPOSAL_TYPE_RENEWAL):
@@ -1180,14 +1188,7 @@ class Proposal(DirtyFieldsMixin, RevisionedMixin):
                     approval.write_approval_history('reissue via application {}'.format(self.lodgement_number))
                 else:
                     approval.write_approval_history()
-                # set wla order
-                approval = approval.set_wla_order()
 
-                # send Proposal approval email with attachment
-                approval.generate_doc()
-                send_application_approved_or_declined_email(self, 'approved', request, stickers_to_be_returned)
-                self.save(version_comment='Final Approval: {}'.format(self.approval.lodgement_number))
-                self.approval.documents.all().update(can_delete=False)
                 return self
 
             except:
