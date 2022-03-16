@@ -417,6 +417,7 @@ class DcvAdmissionFeeSuccessView(TemplateView):
                     'dcv_admission': dcv_admission,
                     'submitter': submitter,
                     'fee_invoice': dcv_admission_fee,
+                    'invoice': invoice,
                 }
                 return render(request, self.template_name, context)
 
@@ -433,6 +434,7 @@ class DcvAdmissionFeeSuccessView(TemplateView):
             'dcv_admission': dcv_admission,
             'submitter': submitter,
             'fee_invoice': dcv_admission_fee,
+            'invoice': invoice,
         }
         return render(request, self.template_name, context)
 
