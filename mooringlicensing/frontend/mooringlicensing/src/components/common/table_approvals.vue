@@ -609,9 +609,17 @@ export default {
                         searchable: true,
                         visible: true,
                         'render': function(row, type, full){
-                            let ret_elems = `<div><a href='${full.licence_document}' target='_blank'><i style='color:red;' class='fa fa-file-pdf-o'></i></a></div>`;
+                            let approval_letter_name = ''
+                            if (full.approval_type_dict.code === 'aup'){
+                                approval_letter_name = 'Authrised User Permit'
+                            } else if (full.approval_type_dict.code === 'aap'){
+                                approval_letter_name = 'Annual Admission Permit'
+                            } else if (full.approval_type_dict.code === 'ml'){
+                                approval_letter_name = 'Mooring Licence'
+                            }
+                            let ret_elems = `<div><a href='${full.licence_document}' target='_blank'><i style='color:red;' class='fa fa-file-pdf-o'></i> ${approval_letter_name}</a></div>`;
                             if (full.authorised_user_summary_document){
-                                ret_elems += `<div><a href='${full.authorised_user_summary_document}' target='_blank'><i style='color:red;' class='fa fa-file-pdf-o'></i></a></div>`;
+                                ret_elems += `<div><a href='${full.authorised_user_summary_document}' target='_blank'><i style='color:red;' class='fa fa-file-pdf-o'></i> List of Authorised Users</a></div>`;
                             }
 
                             return ret_elems

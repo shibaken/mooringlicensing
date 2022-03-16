@@ -242,9 +242,7 @@ class StickerReplacementFeeSuccessView(TemplateView):
     def get(self, request, *args, **kwargs):
 
         try:
-            print('1')
             sticker_action_fee = get_session_sticker_action_invoice(request.session)  # This raises an exception when accessed 2nd time?
-            print('2')
             sticker_action_details = sticker_action_fee.sticker_action_details
 
             if self.request.user.is_authenticated():
@@ -260,7 +258,6 @@ class StickerReplacementFeeSuccessView(TemplateView):
             sticker_action_fee.save()
 
             if sticker_action_fee.payment_type == StickerActionFee.PAYMENT_TYPE_TEMPORARY:
-                print('3')
                 try:
                     inv = Invoice.objects.get(reference=invoice.reference)
                     order = Order.objects.get(number=inv.order_number)
@@ -420,6 +417,7 @@ class DcvAdmissionFeeSuccessView(TemplateView):
                     'dcv_admission': dcv_admission,
                     'submitter': submitter,
                     'fee_invoice': dcv_admission_fee,
+                    'invoice': invoice,
                 }
                 return render(request, self.template_name, context)
 
@@ -436,6 +434,7 @@ class DcvAdmissionFeeSuccessView(TemplateView):
             'dcv_admission': dcv_admission,
             'submitter': submitter,
             'fee_invoice': dcv_admission_fee,
+            'invoice': invoice,
         }
         return render(request, self.template_name, context)
 
