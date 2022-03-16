@@ -41,9 +41,9 @@
             <div class="tab-content" id="pills-tabContent">
               <div class="tab-pane fade" id="pills-applicant" role="tabpanel" aria-labelledby="pills-applicant-tab">
                   <div v-if="is_external">
-                    <Profile 
-                    :isApplication="true" 
-                    v-if="applicantType == 'SUB'" 
+                    <Profile
+                    :isApplication="true"
+                    v-if="applicantType == 'SUB'"
                     ref="profile"
                     @profile-fetched="populateProfile"
                     :showElectoralRoll="showElectoralRoll"
@@ -52,9 +52,9 @@
                     />
                   </div>
                   <div v-else>
-                    <Applicant 
-                        :email_user="proposal.submitter" 
-                        :applicantType="proposal.applicant_type" 
+                    <Applicant
+                        :email_user="proposal.submitter"
+                        :applicantType="proposal.applicant_type"
                         id="proposalStartApplicant"
                         :readonly="readonly"
                     />
@@ -62,16 +62,16 @@
               </div>
               <div class="tab-pane fade" id="pills-vessels" role="tabpanel" aria-labelledby="pills-vessels-tab">
                   <div v-if="proposal">
-                      <CurrentVessels 
+                      <CurrentVessels
                           :proposal=proposal
                           :readonly=readonly
                           :is_internal=is_internal
                           @resetCurrentVessel=resetCurrentVessel
                           />
                   </div>
-                  <Vessels 
-                  :proposal="proposal" 
-                  :profile="profileVar" 
+                  <Vessels
+                  :proposal="proposal"
+                  :profile="profileVar"
                   :id="'proposalStartVessels' + uuid"
                   :key="'proposalStartVessels' + uuid"
                   :keep_current_vessel=keepCurrentVessel
@@ -84,15 +84,15 @@
               </div>
               <div class="tab-pane fade" id="pills-insurance" role="tabpanel" aria-labelledby="pills-insurance-tab">
                   <Insurance
-                  :proposal="proposal" 
-                  id="insurance" 
+                  :proposal="proposal"
+                  id="insurance"
                   ref="insurance"
                   :readonly="readonly"
                   />
               </div>
               <div class="tab-pane fade" id="pills-mooring" role="tabpanel" aria-labelledby="pills-mooring-tab">
                   <div v-if="proposal">
-                      <CurrentMooring 
+                      <CurrentMooring
                           :proposal=proposal
                           :readonly=readonly
                           :is_internal=is_internal
@@ -100,8 +100,8 @@
                           />
                   </div>
                   <MooringAuthorisation
-                  :proposal="proposal" 
-                  id="mooring_authorisation" 
+                  :proposal="proposal"
+                  id="mooring_authorisation"
                   :id="'mooringAuthorisation' + mooringAuthorisationUuid"
                   :key="'mooringAuthorisation' + mooringAuthorisationUuid"
                   :changeMooring=changeMooring
@@ -261,7 +261,7 @@
                         // new application
                         //higherCategory = true;
                         //pass
-                    } else if (this.proposal.max_vessel_length_with_no_payment && 
+                    } else if (this.proposal.max_vessel_length_with_no_payment &&
                         this.proposal.max_vessel_length_with_no_payment <= length) {
                         // vessel length is in higher category
                         higherCategory = true;
@@ -276,7 +276,7 @@
             */
             updateVesselLength: function(length) {
                 if (this.is_external && this.proposal) {
-                    if (this.proposal.max_vessel_length_with_no_payment && 
+                    if (this.proposal.max_vessel_length_with_no_payment &&
                         this.proposal.max_vessel_length_with_no_payment <= length) {
                         // vessel length is in higher category
                         this.higherVesselCategory = true;
@@ -292,11 +292,13 @@
                 this.updateAmendmentRenewalProperties();
             },
             resetCurrentMooring: function(keep) {
+                console.log('resetCurrentMooring() in form_aua.vue')
                 this.changeMooring = keep;
                 this.mooringAuthorisationUuid++
                 this.updateAmendmentRenewalProperties();
             },
             updateAmendmentRenewalProperties: function() {
+                console.log('updateAmendmentRenewalProperties in form_aua.vue')
                 if (this.proposal && ['renewal', 'amendment'].includes(this.proposal.proposal_type.code)) {
                     this.$nextTick(() => {
                         if (this.keepCurrentVessel && !this.higherVesselCategory && !this.changeMooring) {
@@ -390,7 +392,7 @@
             //indow.addEventListener('onblur', vm.leaving);
 
         }
- 
+
     }
 </script>
 
