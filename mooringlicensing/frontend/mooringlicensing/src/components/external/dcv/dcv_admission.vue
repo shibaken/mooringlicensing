@@ -409,7 +409,7 @@ export default {
                 text: "Are you sure you want to pay and submit for this application?",
                 type: "question",
                 showCancelButton: true,
-                confirmButtonText: "Pay and Submit",
+                confirmButtonText: vm.pay_submit_button_text,
             }).then(
                 (res)=>{
                     vm.save_and_pay();
