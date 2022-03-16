@@ -134,6 +134,10 @@ from '@/utils/hooks'
         mounted: function () {
         },
         created: function() {
+            if (this.proposal && !this.proposal.keep_existing_vessel) {
+                this.keep_current_vessel = false;
+                this.resetCurrentVessel();
+            }
         },
     }
 </script>
