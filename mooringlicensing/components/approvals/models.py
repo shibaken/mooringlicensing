@@ -851,11 +851,16 @@ class Approval(RevisionedMixin):
 
         return latest_applied_season
 
-    def _handle_stickers_to_be_removed(self, stickers_to_be_removed):
+    def _handle_stickers_to_be_removed(self, stickers_to_be_removed, stickers_to_be_replaced_for_renewal=[]):
         for sticker in stickers_to_be_removed:
             if sticker.status in (Sticker.STICKER_STATUS_CURRENT, Sticker.STICKER_STATUS_AWAITING_PRINTING):
-                sticker.status = Sticker.STICKER_STATUS_TO_BE_RETURNED
-                sticker.save()
+                if sticker in stickers_to_be_replaced_for_renewal:
+                    # For renewal, old sticker is still in 'current' status until new sticker gets 'current' status
+                    # When new sticker gets 'current' status, old sticker gets 'expired' status
+                    pass
+                else:
+                    sticker.status = Sticker.STICKER_STATUS_TO_BE_RETURNED
+                    sticker.save()
                 # TODO: email to the permission holder to notify the existing sticker to be returned
             elif sticker.status == Sticker.STICKER_STATUS_TO_BE_RETURNED:
                 # Do nothing
@@ -1168,7 +1173,7 @@ class AuthorisedUserPermit(Approval):
 
         # Finally assign mooring(s) to new sticker(s)
         self._assign_to_new_stickers(moas_to_be_reallocated, proposal, stickers_to_be_replaced_for_renewal)
-        self._handle_stickers_to_be_removed(stickers_to_be_returned)
+        self._handle_stickers_to_be_removed(stickers_to_be_returned, stickers_to_be_replaced_for_renewal)
 
         return moas_to_be_reallocated, stickers_to_be_returned
 
