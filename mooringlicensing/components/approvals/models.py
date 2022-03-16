@@ -1974,6 +1974,7 @@ class Sticker(models.Model):
     fee_season = models.ForeignKey('FeeSeason', blank=True, null=True)
     vessel_ownership = models.ForeignKey('VesselOwnership', blank=True, null=True)
     proposal_initiated = models.ForeignKey('Proposal', blank=True, null=True)  # This propposal created this sticker object.  Can be None when sticker created by RequestNewSticker action or so.
+    sticker_to_replace = models.ForeignKey('self', null=True, blank=True)  # This sticker object replaces the sticker_to_replace for renewal
 
     class Meta:
         app_label = 'mooringlicensing'
