@@ -1121,7 +1121,10 @@ class AuthorisedUserPermit(Approval):
         #import ipdb; ipdb.set_trace()
         moorings_str = ''
         for moa in self.mooringonapproval_set.all():
-            if not (moa.mooring.id == self.current_proposal.proposed_issuance_approval.get("mooring_id")):
+            if not (
+                    moa.mooring.id == self.current_proposal.proposed_issuance_approval.get("mooring_id") and 
+                    self.current_proposal.processing_status not in ['approved', 'printing_sticker']
+                    ):
                 moorings_str += moa.mooring.name + ','
         return moorings_str[0:-1] if moorings_str else ''
 
