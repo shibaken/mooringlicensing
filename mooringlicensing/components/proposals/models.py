@@ -1159,7 +1159,7 @@ class Proposal(DirtyFieldsMixin, RevisionedMixin):
 
                 if self.approval:
                     stickers = self.approval.stickers.filter(status__in=(Sticker.STICKER_STATUS_READY, Sticker.STICKER_STATUS_AWAITING_PRINTING))
-                    if stickers.count() >0:
+                    if stickers.count() > 0:
                         awaiting_printing = True
                 if awaiting_printing:
                     self.processing_status = Proposal.PROCESSING_STATUS_PRINTING_STICKER
