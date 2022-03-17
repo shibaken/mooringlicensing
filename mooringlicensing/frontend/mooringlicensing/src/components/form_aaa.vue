@@ -162,7 +162,7 @@
                 profile: {},
                 uuid: 0,
                 keepCurrentVessel: true,
-                showPaymentTab: false,
+                showPaymentTab: true,
                 showInsuranceTab: true,
                 higherVesselCategory: false,
             }
@@ -193,16 +193,6 @@
                 }
                 return text;
             },
-            /*
-            showInsuranceTab: function(){
-                let show=true;
-                if(this.proposal && this.proposal.proposal_type && this.proposal.proposal_type.code !== 'new' && this.keep_current_vessel)
-                {
-                    show=false;
-                }
-                return show;
-            },
-            */
         },
         methods:{
             vesselChanged: async function(vesselChanged) {
@@ -261,34 +251,6 @@
                     });
                 }
             },
-            /*
-            updateAmendmentRenewalProperties: function() {
-                console.log('updateAmendmentRenewalProperties in form_aaa.vue')
-                if (this.proposal && ['renewal', 'amendment'].includes(this.proposal.proposal_type.code)) {
-                    this.$nextTick(() => {
-                        if (this.keepCurrentVessel && !this.higherVesselCategory && !this.changeMooring) {
-                            this.showPaymentTab = true;
-                            this.showInsuranceTab = false;
-                            this.$emit("updateSubmitText", "Pay / Submit");
-                            this.$emit("updateAutoRenew", true);
-                            console.log("here");
-                        } else if (this.keepCurrentVessel && this.higherVesselCategory && !this.changeMooring) {
-                            this.showPaymentTab = false;
-                            this.showInsuranceTab = false;
-                            this.$emit("updateSubmitText", "Submit");
-                            this.$emit("updateAutoRenew", false);
-                            console.log("here");
-                        } else if (!this.keepCurrentVessel && !this.changeMooring) {
-                            this.showPaymentTab = false;
-                            this.showInsuranceTab = true;
-                            this.$emit("updateSubmitText", "Submit");
-                            this.$emit("updateAutoRenew", false);
-                            console.log("here");
-                        }
-                    });
-                }
-            },
-            */
 
             populateProfile: function(profile) {
                 this.profile = Object.assign({}, profile);
@@ -299,18 +261,6 @@
                 /* set Applicant tab Active */
                 $('#pills-tab a[href="#pills-applicant"]').tab('show');
 
-                /*
-                if (vm.proposal.fee_paid) {
-                    $('#pills-online-training-tab').attr('style', 'background-color:#E5E8E8 !important; color: #99A3A4;');
-                    $('#li-training').attr('class', 'nav-item disabled');
-                    $('#pills-online-training-tab').attr("href", "")
-                }
-                if (!vm.proposal.training_completed) {
-                    $('#pills-payment-tab').attr('style', 'background-color:#E5E8E8 !important; color: #99A3A4;');
-                    $('#li-payment').attr('class', 'nav-item disabled');
-                }
-                */
-
                 /* Confirmation tab - Always Disabled */
                 $('#pills-confirm-tab').attr('style', 'background-color:#E5E8E8 !important; color: #99A3A4;');
                 $('#li-confirm').attr('class', 'nav-item disabled');
@@ -318,26 +268,14 @@
                 $('#pills-payment-tab').attr('style', 'background-color:#E5E8E8 !important; color: #99A3A4;');
                 $('#li-payment').attr('class', 'nav-item disabled');
             },
-            /*
-            eventListener: function(){
-              let vm=this;
-              $('a[href="#pills-activities-land"]').on('shown.bs.tab', function (e) {
-                vm.$refs.activities_land.$refs.vehicles_table.$refs.vehicle_datatable.vmDataTable.columns.adjust().responsive.recalc();
-              });
-              $('a[href="#pills-activities-marine"]').on('shown.bs.tab', function (e) {
-                vm.$refs.activities_marine.$refs.vessel_table.$refs.vessel_datatable.vmDataTable.columns.adjust().responsive.recalc();
-              });
-            },
-            */
 
         },
         mounted: function() {
             let vm = this;
             vm.set_tabs();
             vm.form = document.forms.new_proposal;
-            //this.updateVesselLength();
             this.updateAmendmentRenewalProperties();
-            //vm.eventListener();
+            this.$emit("updateSubmitText", "Pay / Submit");
             //window.addEventListener('beforeunload', vm.leaving);
             //indow.addEventListener('onblur', vm.leaving);
 

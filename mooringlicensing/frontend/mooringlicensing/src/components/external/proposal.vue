@@ -31,9 +31,6 @@
                     </li>
                 </ul>
             </div>
-            <!--ProposalTClass v-if="proposal && proposal_parks && proposal.application_type==application_type_tclass" :proposal="proposal" id="proposalStart"  :canEditActivities="canEditActivities" :is_external="true" :proposal_parks="proposal_parks" ref="proposal_tclass"></ProposalTClass>
-            <ProposalFilming v-else-if="proposal && proposal.application_type==application_type_filming" :proposal="proposal" id="proposalStart" :canEditActivities="canEditActivities" :canEditPeriod="canEditPeriod" :is_external="true" :proposal_parks="proposal_parks" ref="proposal_filming"></ProposalFilming>
-            <ProposalEvent v-else-if="proposal && proposal.application_type==application_type_event" :proposal="proposal" id="proposalStart" :canEditActivities="canEditActivities" :canEditPeriod="canEditPeriod" :is_external="true" :proposal_parks="proposal_parks" ref="proposal_event"></ProposalEvent-->
             <WaitingListApplication
             v-if="proposal && proposal.application_type_code==='wla'"
             :proposal="proposal"
@@ -142,11 +139,6 @@
     </div>
 </template>
 <script>
-/*
-import ProposalTClass from '../form_tclass.vue'
-import ProposalFilming from '../form_filming.vue'
-import ProposalEvent from '../form_event.vue'
-*/
 import WaitingListApplication from '../form_wla.vue';
 import AnnualAdmissionApplication from '../form_aaa.vue';
 import AuthorisedUserApplication from '../form_aua.vue';
@@ -191,11 +183,6 @@ export default {
       AnnualAdmissionApplication,
       AuthorisedUserApplication,
       MooringLicenceApplication,
-      /*
-      ProposalTClass,
-      ProposalFilming,
-      ProposalEvent
-      */
   },
   computed: {
       disableSubmit: function() {
@@ -218,15 +205,6 @@ export default {
           }
           return text;
       },
-      /*
-      autoRenew: function() {
-          let renew = false;
-          if (!this.vesselChanged && !this.mooringOptionsChanged && this.proposal.proposal_type.code ==='renewal' && ['mla', 'aua'].includes(this.proposal.application_type_code)) {
-              renew = true;
-          }
-          return renew;
-      },
-      */
       submitterId: function() {
           let submitter = null;
           if (this.proposal && this.proposal.submitter && this.proposal.submitter.id) {
@@ -269,17 +247,6 @@ export default {
       canEditPeriod: function(){
         return this.proposal ? this.proposal.can_user_edit: 'false';
       },
-      /*
-      application_type_tclass: function(){
-        return api_endpoints.t_class;
-      },
-      application_type_filming: function(){
-        return api_endpoints.filming;
-      },
-      application_type_event: function(){
-        return api_endpoints.event;
-      },
-      */
       trainingCompleted: function(){
         if(this.proposal.application_type== 'Event')
           {
@@ -307,31 +274,12 @@ export default {
           }
           return amendRenew;
       },
-      /*
-      annualAdmissionApplication: function() {
-          let retVal = false;
-          if (this.proposal && this.proposal.application_type_code === 'aaa') {
-              retVal = true;
-          }
-          return retVal;
-      },
-      */
-
   },
   methods: {
     updateAutoRenew: function(renew) {
         this.autoRenew = renew;
         console.log("updateAutoRenew");
     },
-      /*
-    addEventListeners: function() {
-        const submitButton = document.getElementById("submitButton");
-        console.log(submitButton);
-        submitButton.addEventListener("mouseenter", function(e) {
-            e.target.title = "mouse over"
-        }, false);
-    },
-    */
     updateMooringAuth: function(changed) {
         this.mooringOptionsChanged = changed;
         console.log("updateMooringAuth");
@@ -353,29 +301,11 @@ export default {
           return this.$refs.authorised_user_application;
       } else if (this.applicationTypeCode == 'mla') {
           return this.$refs.mooring_licence_application;
-      } /*else if(vm.proposal.application_type == vm.application_type_filming) {
-          return vm.$refs.proposal_filming;
-      } else if(vm.proposal.application_type == vm.application_type_event) {
-          return vm.$refs.proposal_event;
       }
-      */
     },
     updateSubmitText: function(submitText) {
         this.submitText = submitText;
     },
-      /*
-    set_submit_text: function() {
-        //let submitText = 'Submit';
-        if(['wla', 'aaa'].includes(this.proposal.application_type_code)) {
-            if (this.proposal.fee_paid){
-                this.submitText = 'Submit';
-            } else {
-                this.submitText = 'Pay / Submit';
-            }
-        }
-        //return submitText;
-    },
-    */
     save_applicant_data:function(){
       if(this.proposal.applicant_type == 'SUB')
       {
@@ -383,25 +313,12 @@ export default {
         this.proposal_refs().$refs.profile.updateAddress();
         this.proposal_refs().$refs.profile.updateContact();
       }
-        /*
-      if(vm.proposal.applicant_type == 'ORG'){
-        vm.proposal_refs().$refs.organisation.updateDetails();
-        vm.proposal_refs().$refs.organisation.updateAddress();
-      }
-      */
     },
 
 
     set_formData: function(e) {
       let vm = this;
-      //vm.form=document.forms.new_proposal;
       let formData = new FormData(vm.form);
-      /*
-      formData.append('selected_parks_activities', JSON.stringify(vm.proposal.selected_parks_activities))
-      formData.append('selected_trails_activities', JSON.stringify(vm.proposal.selected_trails_activities))
-      formData.append('marine_parks_activities', JSON.stringify(vm.proposal.marine_parks_activities))
-      */
-
       return formData;
     },
     save: async function(withConfirm=true, url=this.proposal_form_url) {
@@ -409,8 +326,6 @@ export default {
         vm.savingProposal=true;
         vm.save_applicant_data();
 
-        //let formData = vm.set_formData()
-        //vm.$http.post(vm.proposal_form_url,formData).then(res=>{
         let payload = {
             proposal: {},
             vessel: {},
@@ -441,7 +356,7 @@ export default {
                 // modify if additional proposal attributes required
                 payload.proposal.insurance_choice = this.$refs.annual_admission_application.$refs.insurance.selectedOption;
             }
-            if(this.amendmentOrRenewal && this.$refs.annual_admission_application.keep_current_vessel){
+            if(this.amendmentOrRenewal && this.$refs.annual_admission_application.keepCurrentVessel){
                 payload.ignore_insurance_check=true;
             }
         // AUA
