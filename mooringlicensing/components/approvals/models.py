@@ -1006,6 +1006,7 @@ class AnnualAdmissionPermit(Approval):
                 )
                 new_sticker.sticker_to_replace = sticker_to_be_replaced
                 new_sticker.save()
+            return [], []  # Is this correct?
 
         else:
             # Calculate the stickers which are no longer needed.  Some stickers could be in the 'awaiting_printing'/'to_be_returned' status.
@@ -1427,6 +1428,7 @@ class MooringLicence(Approval):
                 )
                 new_sticker.sticker_to_replace = sticker_to_be_replaced
                 new_sticker.save()
+            return [], []  # Is this correct?
 
         else:
             # Calculate the stickers which are no longer needed.  Some stickers could be in the 'awaiting_printing'/'to_be_returned' status.
