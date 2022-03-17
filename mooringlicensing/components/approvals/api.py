@@ -427,7 +427,7 @@ class ApprovalViewSet(viewsets.ModelViewSet):
             data['action'] = 'Request new sticker'
             data['user'] = request.user.id
             data['reason'] = details['reason']
-            serializer = StickerActionDetailSerializer(data=request.data)
+            serializer = StickerActionDetailSerializer(data=data)
             serializer.is_valid(raise_exception=True)
             new_sticker_action_detail = serializer.save()
             new_sticker_action_detail.sticker = sticker
