@@ -1130,7 +1130,7 @@ class AuthorisedUserPermit(Approval):
             moorings_str = moorings_str[0:-1]
         # only 1 mooring
         elif total_moorings:
-            moorings_str = self.mooringonapproval_set.first()
+            moorings_str = self.mooringonapproval_set.first().mooring.name
         #return moorings_str[0:-1] if moorings_str else ''
         return moorings_str
 
