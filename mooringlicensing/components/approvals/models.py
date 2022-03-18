@@ -1119,11 +1119,16 @@ class AuthorisedUserPermit(Approval):
         return moorings
 
     def previous_moorings(self):
-        #import ipdb; ipdb.set_trace()
         moorings_str = ''
-        for moa in self.mooringonapproval_set.all():
-            if not (moa.mooring.id == self.current_proposal.proposed_issuance_approval.get("mooring_id")):
-                moorings_str += moa.mooring.name + ','
+        total_moorings = self.mooringonapproval_set.count()
+        if total_moorings > 1:
+            for moa in self.mooringonapproval_set.all():
+                # do not show mooring from latest application in "Current Moorings"
+                if not moa.mooring.id == self.current_proposal.proposed_issuance_approval.get("mooring_id"):
+                    moorings_str += moa.mooring.name + ','
+        # only 1 mooring
+        elif total_moorings:
+            moorings_str += moa.mooring.name + ','
         return moorings_str[0:-1] if moorings_str else ''
 
     def manage_stickers(self, proposal):
