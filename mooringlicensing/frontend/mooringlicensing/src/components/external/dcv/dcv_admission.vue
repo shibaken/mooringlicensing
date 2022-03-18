@@ -439,7 +439,7 @@ export default {
                 console.log(res)
                 this.dcv_admission.id = res.body.id
                 await helpers.post_and_redirect(this.dcv_admission_fee_url, {'csrfmiddlewaretoken' : this.csrf_token});
-                this.paySubmitting = false
+                //this.paySubmitting = false
             } catch(err) {
                 helpers.processError(err)
                 this.paySubmitting = false
