@@ -10,8 +10,11 @@
                 <label for="vessel_search" class="col-sm-3 control-label">Vessel registration number</label>
                 <div class="col-sm-9">
                     <select :disabled="readonly" id="vessel_search" name="vessel_registration" ref="dcv_vessel_rego_nos" class="form-control" style="width: 40%">
+                        <option></option>
                     </select>
+                    <!--
                     <span v-if="is_valid_rego_no"><i class="fa fa-check-circle"></i></span>
+                    -->
                 </div>
             </div>
             <div class="row form-group">
@@ -321,7 +324,7 @@ export default {
             $(vm.$refs.dcv_vessel_rego_nos).select2({
                 minimumInputLength: 2,
                 "theme": "bootstrap",
-                allowClear: true,
+                //allowClear: true,
                 //placeholder:"Select Vessel Registration",
                 placeholder: "",
                 tags: true,
@@ -340,8 +343,17 @@ export default {
                     return vm.validateRegoNo(data.text);
                 },
             }).
+            on('select2:clear', function(e){
+                console.log('clear')
+            }).
             on("select2:select",function (e) {
                 console.log('in select')
+                if (!e.params.data.selected) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log("No selection");
+                    return false;
+                }
                 var selected = $(e.currentTarget);
                 //vm.vessel.rego_no = selected.val();
                 let id = selected.val();
@@ -371,7 +383,7 @@ export default {
             on("select2:unselect",function (e) {
                 console.log('select2:unselect')
                 var selected = $(e.currentTarget);
-                //vm.dcv_admission.dcv_vessel.rego_no = '';
+                vm.dcv_admission.dcv_vessel.rego_no = '';
                 vm.dcv_admission.dcv_vessel = Object.assign({},
                     {
                         id: null,
