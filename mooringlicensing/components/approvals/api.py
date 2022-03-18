@@ -423,10 +423,12 @@ class ApprovalViewSet(viewsets.ModelViewSet):
         sticker_action_details = []
         stickers = Sticker.objects.filter(approval=approval, id__in=sticker_ids, status__in=(Sticker.STICKER_STATUS_CURRENT, Sticker.STICKER_STATUS_AWAITING_PRINTING,))
         data = {}
+        today = datetime.datetime.now(pytz.timezone(settings.TIME_ZONE)).date()
         for sticker in stickers:
             data['action'] = 'Request new sticker'
             data['user'] = request.user.id
             data['reason'] = details['reason']
+            data['date_of_lost_sticker'] = today.strftime('%d/%m/%Y')
             serializer = StickerActionDetailSerializer(data=data)
             serializer.is_valid(raise_exception=True)
             new_sticker_action_detail = serializer.save()
