@@ -1126,10 +1126,13 @@ class AuthorisedUserPermit(Approval):
                 # do not show mooring from latest application in "Current Moorings"
                 if not moa.mooring.id == self.current_proposal.proposed_issuance_approval.get("mooring_id"):
                     moorings_str += moa.mooring.name + ','
+            # truncate trailing comma
+            moorings_str = moorings_str[0:-1]
         # only 1 mooring
         elif total_moorings:
-            moorings_str += moa.mooring.name + ','
-        return moorings_str[0:-1] if moorings_str else ''
+            moorings_str = self.mooringonapproval_set.first()
+        #return moorings_str[0:-1] if moorings_str else ''
+        return moorings_str
 
     def manage_stickers(self, proposal):
         moas_to_be_reallocated = []  # MooringOnApproval objects to have new stickers
