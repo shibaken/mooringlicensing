@@ -168,6 +168,7 @@
                 keepCurrentVessel: true,
                 showPaymentTab: false,
                 showInsuranceTab: true,
+                higherVesselCategory: false,
             }
         },
         components: {
@@ -269,12 +270,47 @@
                 this.uuid++
                 this.updateAmendmentRenewalProperties();
             },
+            updateAmendmentRenewalProperties: function() {
+                console.log('updateAmendmentRenewalProperties in form_mla.vue')
+                if (this.proposal && this.proposal.proposal_type.code === 'amendment') {
+                    this.$nextTick(() => {
+                        if (!this.keepCurrentVessel) {
+                            this.showPaymentTab = false;
+                            this.showInsuranceTab = true;
+                            this.$emit("updateSubmitText", "Submit");
+                        } else {
+                            this.showPaymentTab = false;
+                            this.showInsuranceTab = false;
+                            this.$emit("updateSubmitText", "Submit");
+                        }
+                    });
+                } else if (this.proposal && this.proposal.proposal_type.code === 'renewal') {
+                    this.$nextTick(() => {
+                        if (this.keepCurrentVessel && !this.higherVesselCategory) {
+                            this.showPaymentTab = true;
+                            this.showInsuranceTab = false;
+                            this.$emit("updateSubmitText", "Pay / Submit");
+                            this.$emit("updateAutoRenew", true);
+                        } else if (!this.keepCurrentVessel) {
+                            this.showPaymentTab = false;
+                            this.showInsuranceTab = true;
+                            this.$emit("updateSubmitText", "Submit");
+                            this.$emit("updateAutoRenew", false);
+                        } else {
+                            this.showPaymentTab = false;
+                            this.showInsuranceTab = false;
+                            this.$emit("updateSubmitText", "Submit");
+                            this.$emit("updateAutoRenew", false);
+                        }
+                    });
+                }
+            },
+
             /*
             resetCurrentVessel: function(keep) {
                 this.keep_current_vessel = keep;
                 this.uuid++
             },
-            */
             updateAmendmentRenewalProperties: function() {
                 if (this.proposal && ['renewal', 'amendment'].includes(this.proposal.proposal_type.code)) {
                     this.$nextTick(() => {
@@ -298,6 +334,7 @@
                     });
                 }
             },
+            */
 
             populateProfile: function(profile) {
                 this.profile = Object.assign({}, profile);
