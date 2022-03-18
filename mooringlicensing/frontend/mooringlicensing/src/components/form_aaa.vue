@@ -219,6 +219,42 @@
                 console.log('updateAmendmentRenewalProperties in form_aaa.vue')
                 if (this.proposal && this.proposal.proposal_type.code === 'amendment') {
                     this.$nextTick(() => {
+                        // insurance
+                        if (!this.keepCurrentVessel) {
+                            this.showInsuranceTab = true;
+                        } else {
+                            this.showInsuranceTab = false;
+                        }
+                        // payment
+                        if (this.higherVesselCategory) {
+                            this.showPaymentTab = true;
+                            this.$emit("updateSubmitText", "Pay / Submit");
+                        } else {
+                            this.showPaymentTab = true;
+                            this.$emit("updateSubmitText", "Submit");
+                        }
+
+                    });
+                } else if (this.proposal && this.proposal.proposal_type.code === 'renewal') {
+                    this.$nextTick(() => {
+                        if (!this.keepCurrentVessel) {
+                            this.showPaymentTab = true;
+                            this.showInsuranceTab = true;
+                            this.$emit("updateSubmitText", "Pay / Submit");
+                        } else {
+                            this.showPaymentTab = true;
+                            this.showInsuranceTab = false;
+                            this.$emit("updateSubmitText", "Pay / Submit");
+                        }
+                    });
+                }
+            },
+
+            /*
+            updateAmendmentRenewalProperties: function() {
+                console.log('updateAmendmentRenewalProperties in form_aaa.vue')
+                if (this.proposal && this.proposal.proposal_type.code === 'amendment') {
+                    this.$nextTick(() => {
                         if (this.keepCurrentVessel && this.higherVesselCategory) {
                             this.showPaymentTab = true;
                             this.showInsuranceTab = false;
@@ -251,6 +287,7 @@
                     });
                 }
             },
+            */
 
             populateProfile: function(profile) {
                 this.profile = Object.assign({}, profile);
