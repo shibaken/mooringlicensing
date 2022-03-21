@@ -44,6 +44,7 @@
                     <div class="tab-pane fade" id="pills-approvals" role="tabpanel" aria-labelledby="pills-approvals-tab">
                         <FormSection :formCollapse="false" label="Applications" subtitle="" Index="applications" >
                             <ApplicationsTable 
+                                ref="applications_table"
                                 v-if="email_user"
                                 level="internal"
                                 :target_email_user_id="email_user.id"
@@ -79,6 +80,7 @@
                     <div class="tab-pane fade" id="pills-vessels" role="tabpanel" aria-labelledby="pills-vessels-tab">
                         <FormSection :formCollapse="false" label="Vessels" subtitle="" Index="vessels" >
                             <VesselsTable
+                                ref="vessels_table"
                                 v-if="email_user"
                                 level="internal"
                                 :target_email_user_id="email_user.id"
@@ -156,6 +158,15 @@ export default {
     mounted: function(){
         /* set Details tab Active */
         $('#pills-tab a[href="#pills-details"]').tab('show');
+        // ensure datatables in tabs are responsive
+        let vm=this;
+        $('#pills-approvals-tab').on('shown.bs.tab', function (e) {
+            vm.$refs.applications_table.$refs.application_datatable.vmDataTable.columns.adjust().responsive.recalc();
+        });
+        $('#pills-vessels-tab').on('shown.bs.tab', function (e) {
+            console.log(vm.$refs.vessels_table);
+            vm.$refs.vessels_table.$refs.vessels_datatable.vmDataTable.columns.adjust().responsive.recalc();
+        });
     },
 }
 </script>
