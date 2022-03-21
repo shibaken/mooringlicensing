@@ -674,6 +674,7 @@ class ApplicationFeeSuccessView(TemplateView):
                     'submitter': submitter,
                     'fee_invoice': application_fee,
                     'is_wla_or_aaa': wla_or_aaa,
+                    'invoice': invoice,
                 }
                 return render(request, self.template_name, context)
 
@@ -704,7 +705,8 @@ class ApplicationFeeSuccessView(TemplateView):
             'proposal': proposal,
             'submitter': submitter,
             'fee_invoice': application_fee,
-            'is_wla_or_aaa': wla_or_aaa
+            'is_wla_or_aaa': wla_or_aaa,
+            'invoice': invoice,
         }
         return render(request, self.template_name, context)
 

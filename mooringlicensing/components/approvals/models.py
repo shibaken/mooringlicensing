@@ -985,6 +985,11 @@ class AnnualAdmissionPermit(Approval):
             if sticker:
                 sticker = sticker.first()
             else:
+                if proposal.proposal_type.code == PROPOSAL_TYPE_AMENDMENT and proposal.vessel_ownership != proposal.previous_application.vessel_ownership:
+                    new_status = Sticker.STICKER_STATUS_NOT_READY_YET  # This sticker gets 'ready' status once the sticker with 'to be returned' status is returned.
+                else:
+                    new_status = Sticker.STICKER_STATUS_READY
+
                 # Sticker not found --> Create it
                 sticker = Sticker.objects.create(
                     approval=self,
@@ -992,6 +997,7 @@ class AnnualAdmissionPermit(Approval):
                     fee_constructor=proposal.fee_constructor,
                     proposal_initiated=proposal,
                     fee_season=self.latest_applied_season,
+                    status=new_status,
                 )
             stickers_required.append(sticker)
 
@@ -1983,6 +1989,7 @@ class DcvPermitDocument(Document):
 
 
 class Sticker(models.Model):
+    STICKER_STATUS_NOT_READY_YET = 'not_ready_yet'
     STICKER_STATUS_READY = 'ready'
     STICKER_STATUS_AWAITING_PRINTING = 'awaiting_printing'
     STICKER_STATUS_CURRENT = 'current'
@@ -1992,6 +1999,7 @@ class Sticker(models.Model):
     STICKER_STATUS_EXPIRED = 'expired'
     STICKER_STATUS_CANCELLED = 'cancelled'
     STATUS_CHOICES = (
+        (STICKER_STATUS_NOT_READY_YET, 'Not Ready Yet'),
         (STICKER_STATUS_READY, 'Ready'),
         (STICKER_STATUS_AWAITING_PRINTING, 'Awaiting Printing'),
         (STICKER_STATUS_CURRENT, 'Current'),
@@ -2069,10 +2077,20 @@ class Sticker(models.Model):
     def record_lost(self):
         self.status = Sticker.STICKER_STATUS_LOST
         self.save()
+        self.update_other_stickers()
 
     def record_returned(self):
         self.status = Sticker.STICKER_STATUS_RETURNED
         self.save()
+        self.update_other_stickers()
+
+    def update_other_stickers(self):
+        stickers_not_ready_yet = self.approval.stickers.filter(status=Sticker.STICKER_STATUS_NOT_READY_YET)
+        stickers_to_be_returned = self.approval.stickers.filter(status=Sticker.STICKER_STATUS_TO_BE_RETURNED)
+        if not stickers_to_be_returned.count():
+            for sticker in stickers_not_ready_yet:
+                sticker.status = Sticker.STICKER_STATUS_READY
+                sticker.save()
 
     def request_replacement(self, new_status):
         self.status = new_status
