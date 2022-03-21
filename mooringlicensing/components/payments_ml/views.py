@@ -674,6 +674,7 @@ class ApplicationFeeSuccessView(TemplateView):
                     'submitter': submitter,
                     'fee_invoice': application_fee,
                     'is_wla_or_aaa': wla_or_aaa,
+                    'invoice': invoice,
                 }
                 return render(request, self.template_name, context)
 
@@ -700,11 +701,13 @@ class ApplicationFeeSuccessView(TemplateView):
             raise Exception(msg)
 
         wla_or_aaa = True if proposal.application_type.code in [WaitingListApplication.code, AnnualAdmissionApplication.code,] else False
+        invoice = Invoice.objects.get(reference=application_fee.invoice_reference)
         context = {
             'proposal': proposal,
             'submitter': submitter,
             'fee_invoice': application_fee,
-            'is_wla_or_aaa': wla_or_aaa
+            'is_wla_or_aaa': wla_or_aaa,
+            'invoice': invoice,
         }
         return render(request, self.template_name, context)
 

@@ -149,6 +149,7 @@ class Proposal(DirtyFieldsMixin, RevisionedMixin):
     CUSTOMER_STATUS_WITH_ASSESSOR = 'with_assessor'
     CUSTOMER_STATUS_AWAITING_ENDORSEMENT = 'awaiting_endorsement'
     CUSTOMER_STATUS_AWAITING_DOCUMENTS = 'awaiting_documents'
+    CUSTOMER_STATUS_STICKER_TO_BE_RETURNED = 'sticker_to_be_returned'
     CUSTOMER_STATUS_PRINTING_STICKER = 'printing_sticker'
     CUSTOMER_STATUS_APPROVED = 'approved'
     CUSTOMER_STATUS_DECLINED = 'declined'
@@ -160,6 +161,7 @@ class Proposal(DirtyFieldsMixin, RevisionedMixin):
         (CUSTOMER_STATUS_WITH_ASSESSOR, 'Under Review'),
         (CUSTOMER_STATUS_AWAITING_ENDORSEMENT, 'Awaiting Endorsement'),
         (CUSTOMER_STATUS_AWAITING_DOCUMENTS, 'Awaiting Documents'),
+        (CUSTOMER_STATUS_STICKER_TO_BE_RETURNED, 'Sticker to be Returned'),
         (CUSTOMER_STATUS_PRINTING_STICKER, 'Printing Sticker'),
         (CUSTOMER_STATUS_APPROVED, 'Approved'),
         (CUSTOMER_STATUS_DECLINED, 'Declined'),
@@ -178,6 +180,7 @@ class Proposal(DirtyFieldsMixin, RevisionedMixin):
         CUSTOMER_STATUS_WITH_ASSESSOR,
         CUSTOMER_STATUS_WITH_ASSESSOR,
         CUSTOMER_STATUS_AWAITING_PAYMENT,
+        CUSTOMER_STATUS_STICKER_TO_BE_RETURNED,
         CUSTOMER_STATUS_PRINTING_STICKER,
         CUSTOMER_STATUS_AWAITING_ENDORSEMENT,
         CUSTOMER_STATUS_AWAITING_DOCUMENTS,
@@ -190,6 +193,7 @@ class Proposal(DirtyFieldsMixin, RevisionedMixin):
     PROCESSING_STATUS_WITH_ASSESSOR = 'with_assessor'
     PROCESSING_STATUS_WITH_ASSESSOR_REQUIREMENTS = 'with_assessor_requirements'
     PROCESSING_STATUS_WITH_APPROVER = 'with_approver'
+    PROCESSING_STATUS_STICKER_TO_BE_RETURNED = 'sticker_to_be_returned'
     PROCESSING_STATUS_PRINTING_STICKER = 'printing_sticker'
     PROCESSING_STATUS_AWAITING_ENDORSEMENT = 'awaiting_endorsement'
     PROCESSING_STATUS_AWAITING_DOCUMENTS = 'awaiting_documents'
@@ -204,6 +208,7 @@ class Proposal(DirtyFieldsMixin, RevisionedMixin):
         (PROCESSING_STATUS_WITH_ASSESSOR, 'With Assessor'),
         (PROCESSING_STATUS_WITH_ASSESSOR_REQUIREMENTS, 'With Assessor (Requirements)'),
         (PROCESSING_STATUS_WITH_APPROVER, 'With Approver'),
+        (PROCESSING_STATUS_STICKER_TO_BE_RETURNED, 'Sticker to be Returned'),
         (PROCESSING_STATUS_PRINTING_STICKER, 'Printing Sticker'),
         (PROCESSING_STATUS_AWAITING_ENDORSEMENT, 'Awaiting Endorsement'),
         (PROCESSING_STATUS_AWAITING_DOCUMENTS, 'Awaiting Documents'),
@@ -1153,17 +1158,24 @@ class Proposal(DirtyFieldsMixin, RevisionedMixin):
                 # Update stickers
                 moas_to_be_reallocated, stickers_to_be_returned = self.approval.manage_stickers(self)
 
-                ## set proposal status after manage_stickers
                 from mooringlicensing.components.approvals.models import Sticker
-                awaiting_printing = False
 
+                #####
+                # set proposal status after manage_stickers
+                #####
+                awaiting_printing = False
                 if self.approval:
-                    stickers = self.approval.stickers.filter(status__in=(Sticker.STICKER_STATUS_READY, Sticker.STICKER_STATUS_AWAITING_PRINTING))
+                    stickers = self.approval.stickers.filter(status__in=(Sticker.STICKER_STATUS_NOT_READY_YET, Sticker.STICKER_STATUS_READY, Sticker.STICKER_STATUS_AWAITING_PRINTING))
                     if stickers.count() > 0:
                         awaiting_printing = True
                 if awaiting_printing:
-                    self.processing_status = Proposal.PROCESSING_STATUS_PRINTING_STICKER
-                    self.customer_status = Proposal.CUSTOMER_STATUS_PRINTING_STICKER
+                    if self.proposal_type.code == PROPOSAL_TYPE_AMENDMENT and len(stickers_to_be_returned) and self.vessel_ownership != self.previous_application.vessel_ownership:
+                        # When amendment and there is a sticker to be returned, application status gets
+                        self.processing_status = Proposal.PROCESSING_STATUS_STICKER_TO_BE_RETURNED
+                        self.customer_status = Proposal.CUSTOMER_STATUS_STICKER_TO_BE_RETURNED
+                    else:
+                        self.processing_status = Proposal.PROCESSING_STATUS_PRINTING_STICKER
+                        self.customer_status = Proposal.CUSTOMER_STATUS_PRINTING_STICKER
                     # Log proposal action
                     self.log_user_action(ProposalUserAction.ACTION_PRINTING_STICKER.format(self.id), request)
                 else:
