@@ -278,7 +278,7 @@ from '@/utils/hooks'
                             searchable: true,
                             visible: true,
                             'render': function(row, type, full){
-                                return 'link to?';
+                                return `<a href='${full.action_link}'>View</a><br/>`;
                             }
                         },
                         ],
