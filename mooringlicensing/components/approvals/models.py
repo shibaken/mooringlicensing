@@ -854,7 +854,7 @@ class Approval(RevisionedMixin):
 
     def _handle_stickers_to_be_removed(self, stickers_to_be_removed, stickers_to_be_replaced_for_renewal=[]):
         for sticker in stickers_to_be_removed:
-            if sticker.status in (Sticker.STICKER_STATUS_CURRENT, Sticker.STICKER_STATUS_AWAITING_PRINTING):
+            if sticker.status in [Sticker.STICKER_STATUS_CURRENT, Sticker.STICKER_STATUS_AWAITING_PRINTING,]:
                 if sticker in stickers_to_be_replaced_for_renewal:
                     # For renewal, old sticker is still in 'current' status until new sticker gets 'current' status
                     # When new sticker gets 'current' status, old sticker gets 'expired' status
@@ -866,7 +866,7 @@ class Approval(RevisionedMixin):
             elif sticker.status == Sticker.STICKER_STATUS_TO_BE_RETURNED:
                 # Do nothing
                 pass
-            elif sticker.status in (Sticker.STICKER_STATUS_READY,):
+            elif sticker.status in [Sticker.STICKER_STATUS_READY, Sticker.STICKER_STATUS_NOT_READY_YET,]:
                 sticker.status = Sticker.STICKER_STATUS_CANCELLED
                 sticker.save()
             else:
@@ -1184,7 +1184,7 @@ class AuthorisedUserPermit(Approval):
             for moa in sticker.mooringonapproval_set.all():
                 # This sticker is possibly to be removed, but it may have current mooring(s)
                 if moa not in moas_to_be_removed and moa not in moas_to_be_reallocated:
-                    # This moa is not removed, but reallocated
+                    # This moa is not to be removed.  Therefore, it should be reallocated
                     moas_to_be_reallocated.append(moa)
 
         if len(moas_to_be_reallocated) > 0:
