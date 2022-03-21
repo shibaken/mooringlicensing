@@ -701,6 +701,7 @@ class ApplicationFeeSuccessView(TemplateView):
             raise Exception(msg)
 
         wla_or_aaa = True if proposal.application_type.code in [WaitingListApplication.code, AnnualAdmissionApplication.code,] else False
+        invoice = Invoice.objects.get(reference=application_fee.invoice_reference)
         context = {
             'proposal': proposal,
             'submitter': submitter,
