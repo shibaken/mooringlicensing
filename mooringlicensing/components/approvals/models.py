@@ -39,7 +39,7 @@ from mooringlicensing.components.approvals.email import (
 from mooringlicensing.helpers import is_customer
 from mooringlicensing.settings import PROPOSAL_TYPE_RENEWAL, PROPOSAL_TYPE_AMENDMENT
 
-logger = logging.getLogger('log')
+logger = logging.getLogger('mooringlicensing')
 
 
 def update_waiting_list_offer_doc_filename(instance, filename):

@@ -5,7 +5,7 @@ from django.dispatch import receiver
 from mooringlicensing.components.approvals.models import Sticker
 from mooringlicensing.components.proposals.models import Proposal
 
-logger = logging.getLogger('log')
+logger = logging.getLogger('mooringlicensing')
 
 
 class StickerListener(object):
