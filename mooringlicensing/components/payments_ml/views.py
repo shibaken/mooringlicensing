@@ -430,6 +430,7 @@ class DcvAdmissionFeeSuccessView(TemplateView):
             else:
                 return redirect('home')
 
+        invoice = Invoice.objects.get(reference=dcv_admission_fee.invoice_reference)
         context = {
             'dcv_admission': dcv_admission,
             'submitter': submitter,
