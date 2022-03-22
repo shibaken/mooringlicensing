@@ -16,7 +16,7 @@ import logging
 
 from mooringlicensing.components.proposals.models import StickerPrintingResponse, StickerPrintingResponseEmail
 
-logger = logging.getLogger('log')
+logger = logging.getLogger('mooringlicensing')
 
 
 class Command(BaseCommand):
