@@ -1223,6 +1223,7 @@ class VesselFullOwnershipSerializer(serializers.ModelSerializer):
     end_date = serializers.SerializerMethodField()
     owner_phone_number = serializers.SerializerMethodField()
     individual_owner = serializers.SerializerMethodField()
+    action_link = serializers.SerializerMethodField()
 
     class Meta:
         model = VesselOwnership
@@ -1237,7 +1238,11 @@ class VesselFullOwnershipSerializer(serializers.ModelSerializer):
                 'owner_phone_number',
                 'individual_owner',
                 'dot_name',
+                'action_link',
                 )
+
+    def get_action_link(self, obj):
+        return '/internal/person/{}'.format(obj.owner.emailuser.id)
 
     def get_owner_full_name(self, obj):
         return obj.owner.emailuser.get_full_name()
