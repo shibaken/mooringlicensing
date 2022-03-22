@@ -9,7 +9,7 @@ from mooringlicensing.components.main.models import ApplicationType
 from mooringlicensing.components.payments_ml.models import FeeConstructor
 from mooringlicensing.components.payments_ml.serializers import FeeConstructorSerializer
 
-logger = logging.getLogger('log')
+logger = logging.getLogger('mooringlicensing')
 
 
 class GetSeasonsForDcvPermitDict(views.APIView):

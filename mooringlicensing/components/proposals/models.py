@@ -652,6 +652,7 @@ class Proposal(DirtyFieldsMixin, RevisionedMixin):
             Proposal.PROCESSING_STATUS_AWAITING_ENDORSEMENT,
             Proposal.PROCESSING_STATUS_AWAITING_DOCUMENTS,
             Proposal.PROCESSING_STATUS_PRINTING_STICKER,
+            Proposal.PROCESSING_STATUS_STICKER_TO_BE_RETURNED,
         ]
         return False if self.processing_status in officer_view_state else True
 
@@ -1162,7 +1163,7 @@ class Proposal(DirtyFieldsMixin, RevisionedMixin):
                 from mooringlicensing.components.approvals.models import Sticker
 
                 #####
-                # set proposal status after manage_stickers
+                # Set proposal status after manage_stickers
                 #####
                 awaiting_printing = False
                 if self.approval:
@@ -1174,11 +1175,11 @@ class Proposal(DirtyFieldsMixin, RevisionedMixin):
                         # When amendment and there is a sticker to be returned, application status gets
                         self.processing_status = Proposal.PROCESSING_STATUS_STICKER_TO_BE_RETURNED
                         self.customer_status = Proposal.CUSTOMER_STATUS_STICKER_TO_BE_RETURNED
+                        self.log_user_action(ProposalUserAction.ACTION_STICKER_TO_BE_RETURNED.format(self.id), request)
                     else:
                         self.processing_status = Proposal.PROCESSING_STATUS_PRINTING_STICKER
                         self.customer_status = Proposal.CUSTOMER_STATUS_PRINTING_STICKER
-                    # Log proposal action
-                    self.log_user_action(ProposalUserAction.ACTION_PRINTING_STICKER.format(self.id), request)
+                        self.log_user_action(ProposalUserAction.ACTION_PRINTING_STICKER.format(self.id), request)
                 else:
                     self.processing_status = Proposal.PROCESSING_STATUS_APPROVED
                     self.customer_status = Proposal.CUSTOMER_STATUS_APPROVED
@@ -2345,18 +2346,27 @@ class AuthorisedUserApplication(Proposal):
         # manage stickers
         moas_to_be_reallocated, stickers_to_be_returned = approval.manage_stickers(self)
 
-        ## set proposal status after manage _stickers
+        #####
+        # Set proposal status after manage _stickers
+        #####
         awaiting_printing = False
-
         if self.approval:
-            stickers = self.approval.stickers.filter(status__in=(Sticker.STICKER_STATUS_READY, Sticker.STICKER_STATUS_AWAITING_PRINTING))
-            if stickers.count() >0:
+            stickers = self.approval.stickers.filter(status__in=[Sticker.STICKER_STATUS_NOT_READY_YET, Sticker.STICKER_STATUS_READY, Sticker.STICKER_STATUS_AWAITING_PRINTING,])
+            if stickers.count() > 0:
                 awaiting_printing = True
-
-        if awaiting_printing or auto_renew:
+        if awaiting_printing:
+            if self.proposal_type.code == PROPOSAL_TYPE_AMENDMENT and len(stickers_to_be_returned) and self.vessel_ownership != self.previous_application.vessel_ownership:
+                # When amendment and there is a sticker to be returned, application status gets 'Sticker to be Returned' status
+                self.processing_status = Proposal.PROCESSING_STATUS_STICKER_TO_BE_RETURNED
+                self.customer_status = Proposal.CUSTOMER_STATUS_STICKER_TO_BE_RETURNED
+                self.log_user_action(ProposalUserAction.ACTION_STICKER_TO_BE_RETURNED.format(self.id), request)
+            else:
+                self.processing_status = Proposal.PROCESSING_STATUS_PRINTING_STICKER
+                self.customer_status = Proposal.CUSTOMER_STATUS_PRINTING_STICKER
+                self.log_user_action(ProposalUserAction.ACTION_PRINTING_STICKER.format(self.id), request)
+        elif auto_renew:
             self.processing_status = Proposal.PROCESSING_STATUS_PRINTING_STICKER
             self.customer_status = Proposal.CUSTOMER_STATUS_PRINTING_STICKER
-            # Log proposal action
             self.log_user_action(ProposalUserAction.ACTION_PRINTING_STICKER.format(self.id), request)
         else:
             self.processing_status = Proposal.PROCESSING_STATUS_APPROVED
@@ -3464,6 +3474,7 @@ class ProposalUserAction(UserAction):
     ACTION_ISSUE_APPROVAL_ = "Issue Licence for application {}"
     ACTION_AWAITING_PAYMENT_APPROVAL_ = "Awaiting Payment for application {}"
     ACTION_PRINTING_STICKER = "Printing Sticker for application {}"
+    ACTION_STICKER_TO_BE_RETURNED = "Sticker to be returned for application {}"
     ACTION_APPROVE_APPLICATION = "Approve application {}"
     ACTION_UPDATE_APPROVAL_ = "Update Licence for application {}"
     ACTION_EXPIRED_APPROVAL_ = "Expire Approval for proposal {}"
