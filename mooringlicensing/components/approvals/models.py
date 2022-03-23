@@ -20,6 +20,7 @@ from ledger.accounts.models import EmailUser, RevisionedMixin
 from ledger.payments.invoice.models import Invoice
 from mooringlicensing.components.approvals.pdf import create_dcv_permit_document, create_dcv_admission_document, \
     create_approval_doc, create_renewal_doc
+from mooringlicensing.components.emails.utils import get_public_url
 from mooringlicensing.components.organisations.models import Organisation
 from mooringlicensing.components.payments_ml.models import StickerActionFee
 from mooringlicensing.components.proposals.models import Proposal, ProposalUserAction, MooringBay, Mooring, \
@@ -38,7 +39,7 @@ from mooringlicensing.components.approvals.email import (
 from mooringlicensing.helpers import is_customer
 from mooringlicensing.settings import PROPOSAL_TYPE_RENEWAL, PROPOSAL_TYPE_AMENDMENT
 
-logger = logging.getLogger('log')
+logger = logging.getLogger('mooringlicensing')
 
 
 def update_waiting_list_offer_doc_filename(instance, filename):
@@ -118,6 +119,9 @@ class MooringOnApproval(RevisionedMixin):
         if existing_ria_moorings >= 2 and not self.site_licensee:
             raise ValidationError('Maximum of two RIA selected moorings allowed per Authorised User Permit')
 
+        kwargs.pop('version_user', None)
+        kwargs.pop('version_comment', None)
+        kwargs['no_revision'] = True
         super(MooringOnApproval, self).save(*args,**kwargs)
 
     class Meta:
@@ -139,23 +143,24 @@ class VesselOwnershipOnApproval(RevisionedMixin):
 
 
 class ApprovalHistory(RevisionedMixin):
-    REASON_NEW = 'new'
-    REASON_REPLACEMENT_STICKER = 'replacement_sticker'
-    REASON_VESSEL_ADD = 'vessel_add'
-    REASON_VESSEL_SOLD = 'vessel_sold'
-    REASON_MOORING_ADD = 'mooring_add'
-    REASON_MOORING_SWAP = 'mooring_swap'
+    #REASON_NEW = 'new'
+    #REASON_REPLACEMENT_STICKER = 'replacement_sticker'
+    #REASON_VESSEL_ADD = 'vessel_add'
+    #REASON_VESSEL_SOLD = 'vessel_sold'
+    #REASON_MOORING_ADD = 'mooring_add'
+    #REASON_MOORING_SWAP = 'mooring_swap'
 
-    REASON_CHOICES = (
-        (REASON_NEW, 'New'),
-        (REASON_REPLACEMENT_STICKER, 'Replacement sticker'),
-        (REASON_VESSEL_ADD, 'Vessel added'),
-        (REASON_VESSEL_SOLD, 'Vessel sold'),
-        (REASON_MOORING_ADD, 'New mooring'),
-        (REASON_MOORING_SWAP, 'Mooring swap'),
-    )
+    #REASON_CHOICES = (
+    #    (REASON_NEW, 'New'),
+    #    (REASON_REPLACEMENT_STICKER, 'Replacement sticker'),
+    #    (REASON_VESSEL_ADD, 'Vessel added'),
+    #    (REASON_VESSEL_SOLD, 'Vessel sold'),
+    #    (REASON_MOORING_ADD, 'New mooring'),
+    #    (REASON_MOORING_SWAP, 'Mooring swap'),
+    #)
 
-    reason = models.CharField(max_length=40, choices=REASON_CHOICES, blank=True, null=True)
+    #reason = models.CharField(max_length=40, choices=REASON_CHOICES, blank=True, null=True)
+    reason = models.CharField(max_length=100, blank=True, null=True)
                                        #default=REASON_CHOICES[0][0])
     approval = models.ForeignKey('Approval')
     # can be null due to requirement to allow null vessels on renewal/amendment applications
@@ -347,16 +352,7 @@ class Approval(RevisionedMixin):
 
     def write_approval_history(self, reason=None):
         history_count = self.approvalhistory_set.count()
-        if reason:
-            new_approval_history_entry = ApprovalHistory.objects.create(
-                vessel_ownership=self.current_proposal.vessel_ownership,
-                approval=self,
-                proposal=self.current_proposal,
-                start_date=self.issue_date,
-                approval_letter=self.licence_document,
-                reason=reason,
-            )
-        elif not history_count:
+        if not history_count:
             new_approval_history_entry = ApprovalHistory.objects.create(
                 vessel_ownership=self.current_proposal.vessel_ownership,
                 approval=self,
@@ -364,6 +360,15 @@ class Approval(RevisionedMixin):
                 start_date=self.issue_date,
                 approval_letter=self.licence_document,
                 reason='new',
+            )
+        elif reason:
+            new_approval_history_entry = ApprovalHistory.objects.create(
+                vessel_ownership=self.current_proposal.vessel_ownership,
+                approval=self,
+                proposal=self.current_proposal,
+                start_date=self.issue_date,
+                approval_letter=self.licence_document,
+                reason=reason,
             )
         else:
             new_approval_history_entry = ApprovalHistory.objects.create(
@@ -429,7 +434,8 @@ class Approval(RevisionedMixin):
             for w in WaitingListAllocation.objects.filter(
                     wla_queue_date__isnull=False,
                     current_proposal__preferred_bay=self.current_proposal.preferred_bay,
-                    status='current').order_by(
+                    status__in=['current', 'suspended']).order_by(
+                    #status='current').order_by(
                             'wla_queue_date'):
                 w.wla_order = place
                 w.save()
@@ -516,6 +522,9 @@ class Approval(RevisionedMixin):
         return max(ids) + 1 if ids else 1
 
     def save(self, *args, **kwargs):
+        kwargs.pop('version_user', None)
+        kwargs.pop('version_comment', None)
+        kwargs['no_revision'] = True
         super(Approval, self).save(*args, **kwargs)
         self.child_obj.refresh_from_db()
         if type(self.child_obj) == MooringLicence and self.status in ['expired', 'cancelled', 'surrendered']:
@@ -843,16 +852,21 @@ class Approval(RevisionedMixin):
 
         return latest_applied_season
 
-    def _handle_stickers_to_be_removed(self, stickers_to_be_removed):
+    def _handle_stickers_to_be_removed(self, stickers_to_be_removed, stickers_to_be_replaced_for_renewal=[]):
         for sticker in stickers_to_be_removed:
-            if sticker.status in (Sticker.STICKER_STATUS_CURRENT, Sticker.STICKER_STATUS_AWAITING_PRINTING):
-                sticker.status = Sticker.STICKER_STATUS_TO_BE_RETURNED
-                sticker.save()
+            if sticker.status in [Sticker.STICKER_STATUS_CURRENT, Sticker.STICKER_STATUS_AWAITING_PRINTING,]:
+                if sticker in stickers_to_be_replaced_for_renewal:
+                    # For renewal, old sticker is still in 'current' status until new sticker gets 'current' status
+                    # When new sticker gets 'current' status, old sticker gets 'expired' status
+                    pass
+                else:
+                    sticker.status = Sticker.STICKER_STATUS_TO_BE_RETURNED
+                    sticker.save()
                 # TODO: email to the permission holder to notify the existing sticker to be returned
             elif sticker.status == Sticker.STICKER_STATUS_TO_BE_RETURNED:
                 # Do nothing
                 pass
-            elif sticker.status in (Sticker.STICKER_STATUS_READY,):
+            elif sticker.status in [Sticker.STICKER_STATUS_READY, Sticker.STICKER_STATUS_NOT_READY_YET,]:
                 sticker.status = Sticker.STICKER_STATUS_CANCELLED
                 sticker.save()
             else:
@@ -892,12 +906,16 @@ class WaitingListAllocation(Approval):
             'vessel_name': self.current_proposal.vessel_details.vessel_name,
             'vessel_length': self.current_proposal.vessel_details.vessel_applicable_length,
             'vessel_draft': self.current_proposal.vessel_details.vessel_draft,
+            'public_url': get_public_url(),
         }
         return context
 
     def save(self, *args, **kwargs):
         if self.lodgement_number == '':
             self.lodgement_number = self.prefix + '{0:06d}'.format(self.next_id)
+        kwargs.pop('version_user', None)
+        kwargs.pop('version_comment', None)
+        kwargs['no_revision'] = True
         super(Approval, self).save(*args, **kwargs)
 
     def manage_stickers(self, proposal):
@@ -935,13 +953,17 @@ class AnnualAdmissionPermit(Approval):
             'vessel_rego_no': self.current_proposal.vessel_details.vessel.rego_no,
             'vessel_name': self.current_proposal.vessel_details.vessel_name,
             'vessel_length': self.current_proposal.vessel_details.vessel_applicable_length,
-            'expiry_date': self.expiry_date.strftime('%d/%m/%Y')
+            'expiry_date': self.expiry_date.strftime('%d/%m/%Y'),
+            'public_url': get_public_url(),
         }
         return context
 
     def save(self, *args, **kwargs):
         if self.lodgement_number == '':
             self.lodgement_number = self.prefix + '{0:06d}'.format(self.next_id)
+        kwargs.pop('version_user', None)
+        kwargs.pop('version_comment', None)
+        kwargs['no_revision'] = True
         super(Approval, self).save(*args, **kwargs)
 
     def manage_stickers(self, proposal):
@@ -963,6 +985,11 @@ class AnnualAdmissionPermit(Approval):
             if sticker:
                 sticker = sticker.first()
             else:
+                if proposal.proposal_type.code == PROPOSAL_TYPE_AMENDMENT and proposal.vessel_ownership != proposal.previous_application.vessel_ownership:
+                    new_status = Sticker.STICKER_STATUS_NOT_READY_YET  # This sticker gets 'ready' status once the sticker with 'to be returned' status is returned.
+                else:
+                    new_status = Sticker.STICKER_STATUS_READY
+
                 # Sticker not found --> Create it
                 sticker = Sticker.objects.create(
                     approval=self,
@@ -970,16 +997,31 @@ class AnnualAdmissionPermit(Approval):
                     fee_constructor=proposal.fee_constructor,
                     proposal_initiated=proposal,
                     fee_season=self.latest_applied_season,
+                    status=new_status,
                 )
             stickers_required.append(sticker)
 
-        # Calculate the stickers which are no longer needed.  Some stickers could be in the 'awaiting_printing'/'to_be_returned' status.
-        stickers_to_be_returned = [sticker for sticker in stickers_present if sticker not in stickers_required]
+        if proposal.proposal_type.code == PROPOSAL_TYPE_RENEWAL:
+            for sticker_to_be_replaced in stickers_required:
+                new_sticker = Sticker.objects.create(
+                    approval=self,
+                    vessel_ownership=sticker_to_be_replaced.vessel_ownership,
+                    fee_constructor=proposal.fee_constructor if proposal.fee_constructor else sticker_to_be_replaced.fee_constructor if sticker_to_be_replaced else None,
+                    proposal_initiated=proposal,
+                    fee_season=self.latest_applied_season,
+                )
+                new_sticker.sticker_to_replace = sticker_to_be_replaced
+                new_sticker.save()
+            return [], []  # Is this correct?
 
-        # Update sticker status
-        self._handle_stickers_to_be_removed(stickers_to_be_returned)
+        else:
+            # Calculate the stickers which are no longer needed.  Some stickers could be in the 'awaiting_printing'/'to_be_returned' status.
+            stickers_to_be_returned = [sticker for sticker in stickers_present if sticker not in stickers_required]
 
-        return [], stickers_to_be_returned
+            # Update sticker status
+            self._handle_stickers_to_be_removed(stickers_to_be_returned)
+
+            return [], stickers_to_be_returned
 
 
 class AuthorisedUserPermit(Approval):
@@ -1008,10 +1050,10 @@ class AuthorisedUserPermit(Approval):
             m = {}
             # calculate phone number(s)
             numbers = []
-            if mooring.mooring_licence.submitter.phone_number:
-                numbers.append(mooring.mooring_licence.submitter.phone_number)
             if mooring.mooring_licence.submitter.mobile_number:
                 numbers.append(mooring.mooring_licence.submitter.mobile_number)
+            elif mooring.mooring_licence.submitter.phone_number:
+                numbers.append(mooring.mooring_licence.submitter.phone_number)
             m['name'] = mooring.name
             m['licensee_full_name'] = mooring.mooring_licence.submitter.get_full_name()
             m['licensee_email'] = mooring.mooring_licence.submitter.email
@@ -1033,16 +1075,20 @@ class AuthorisedUserPermit(Approval):
             'vessel_length': self.current_proposal.vessel_details.vessel_applicable_length,
             'vessel_draft': self.current_proposal.vessel_details.vessel_draft,
             'moorings': moorings,  # m.name, m.licensee_full_name, m.licensee_email, m.licensee_phone
-            'expiry_date': self.expiry_date.strftime('%d/%m/%Y')
+            'expiry_date': self.expiry_date.strftime('%d/%m/%Y'),
+            'public_url': get_public_url(),
         }
         return context
 
     def save(self, *args, **kwargs):
         if self.lodgement_number == '':
             self.lodgement_number = self.prefix + '{0:06d}'.format(self.next_id)
+        kwargs.pop('version_user', None)
+        kwargs.pop('version_comment', None)
+        kwargs['no_revision'] = True
         super(Approval, self).save(*args, **kwargs)
 
-    def internal_reissue(self):
+    def internal_reissue(self, mooring_licence):
         ## now reissue approval
         self.current_proposal.processing_status = 'printing_sticker'
         self.current_proposal.save()
@@ -1051,6 +1097,7 @@ class AuthorisedUserPermit(Approval):
         # Create a log entry for the proposal and approval
         self.current_proposal.log_user_action(ProposalUserAction.ACTION_REISSUE_APPROVAL.format(self.lodgement_number))
         self.approval.log_user_action(ApprovalUserAction.ACTION_REISSUE_APPROVAL.format(self.lodgement_number))
+        self.approval.log_user_action(ApprovalUserAction.ACTION_REISSUE_APPROVAL_ML.format(mooring_licence.lodgement_number))
         ## final approval
         self.current_proposal.final_approval()
 
@@ -1068,7 +1115,7 @@ class AuthorisedUserPermit(Approval):
             if moa.mooring == mooring_licence.mooring:
                 ## send email to auth user
                 send_auth_user_mooring_removed_notification(self.approval, mooring_licence)
-        self.internal_reissue()
+        self.internal_reissue(mooring_licence)
 
     @property
     def current_moorings(self):
@@ -1078,24 +1125,65 @@ class AuthorisedUserPermit(Approval):
             moorings.append(moa.mooring)
         return moorings
 
+    def previous_moorings(self):
+        moorings_str = ''
+        total_moorings = self.mooringonapproval_set.count()
+        if total_moorings > 1:
+            for moa in self.mooringonapproval_set.all():
+                # do not show mooring from latest application in "Current Moorings"
+                if not moa.mooring.id == self.current_proposal.proposed_issuance_approval.get("mooring_id"):
+                    moorings_str += moa.mooring.name + ','
+            # truncate trailing comma
+            moorings_str = moorings_str[0:-1]
+        # only 1 mooring
+        elif total_moorings:
+            moorings_str = self.mooringonapproval_set.first().mooring.name
+        #return moorings_str[0:-1] if moorings_str else ''
+        return moorings_str
+
+    def _get_current_moas(self):
+        moas_current = self.mooringonapproval_set. \
+            filter(Q(end_date__isnull=True) | Q(mooring__mooring_licence__status=MooringLicence.APPROVAL_STATUS_CURRENT)). \
+            filter(sticker__status__in=[Sticker.STICKER_STATUS_CURRENT, Sticker.STICKER_STATUS_AWAITING_PRINTING])
+        return moas_current
+
     def manage_stickers(self, proposal):
-        moas_to_be_reallocated = []  # MooringOnApproval objects to have new stickers
+        moas_to_be_reallocated = []  # MooringOnApproval objects to be on the new stickers
         stickers_to_be_returned = []  # Stickers to be returned
         stickers_to_be_replaced = []  # Stickers to be replaced by new stickers.  Temporarily used
+        stickers_to_be_replaced_for_renewal = []  # When replaced for renewal, sticker doesn't need to be returned.  This is used for that.
 
-        # Find all the moorings which should be assigned to the new stickers
-        new_mooring_on_approval = MooringOnApproval.objects.filter(approval=self, sticker__isnull=True)  # New moa doesn't have stickers.
-        for moa in new_mooring_on_approval:
+        # 1. Find all the moorings which should be assigned to the new stickers
+        new_moas = MooringOnApproval.objects.filter(approval=self, sticker__isnull=True)  # New moa doesn't have stickers.
+        for moa in new_moas:
             if moa not in moas_to_be_reallocated:
                 moas_to_be_reallocated.append(moa)
 
-        # Find all the stickers to be replaced
-        moas_removed = self.mooringonapproval_set.\
-            filter(Q(end_date__isnull=False) | ~Q(mooring__mooring_licence__status=MooringLicence.APPROVAL_STATUS_CURRENT)).\
-            filter(sticker__status__in=[Sticker.STICKER_STATUS_CURRENT, Sticker.STICKER_STATUS_AWAITING_PRINTING])
-        for moa in moas_removed:
-            if moa.sticker not in stickers_to_be_replaced:
-                stickers_to_be_replaced.append(moa.sticker)
+        # 2. Find all the moas to be removed
+        # 3. Fild all the stickers to be replaced by the moas found at the #2, then find all the moas to be replaced
+        moas_to_be_removed = []
+        if proposal.proposal_type.code == PROPOSAL_TYPE_RENEWAL:
+            # When renewal, all the current/awaiting_printing stickers to be replaced
+            # All the sticker gets 'expired' status once payment made
+            moas_current = self._get_current_moas()
+            for moa in moas_current:
+                if moa.sticker not in stickers_to_be_replaced:
+                    stickers_to_be_replaced.append(moa.sticker)
+                    stickers_to_be_replaced_for_renewal.append(moa.sticker)
+        elif proposal.proposal_type.code == PROPOSAL_TYPE_AMENDMENT and proposal.vessel_ownership != proposal.previous_application.vessel_ownership:
+            # When amendment and vessel changed, all the current/awaiting_printing stickers to be replaced
+            moas_current = self._get_current_moas()
+            for moa in moas_current:
+                if moa.sticker not in stickers_to_be_replaced:
+                    stickers_to_be_replaced.append(moa.sticker)
+        else:
+            # MooringOnApprovals which has end_date OR related ML is not current status, but sticker is still in current/awaiting_printing status
+            moas_to_be_removed = self.mooringonapproval_set.\
+                filter(Q(end_date__isnull=False) | ~Q(mooring__mooring_licence__status=MooringLicence.APPROVAL_STATUS_CURRENT)).\
+                filter(sticker__status__in=[Sticker.STICKER_STATUS_CURRENT, Sticker.STICKER_STATUS_AWAITING_PRINTING])
+            for moa in moas_to_be_removed:
+                if moa.sticker not in stickers_to_be_replaced:
+                    stickers_to_be_replaced.append(moa.sticker)
 
         # Handle vessel changes
         self.handle_vessel_changes(moas_to_be_reallocated, stickers_to_be_replaced)
@@ -1104,7 +1192,9 @@ class AuthorisedUserPermit(Approval):
         for sticker in stickers_to_be_replaced:
             stickers_to_be_returned.append(sticker)
             for moa in sticker.mooringonapproval_set.all():
-                if moa not in moas_removed and moa not in moas_to_be_reallocated:
+                # This sticker is possibly to be removed, but it may have current mooring(s)
+                if moa not in moas_to_be_removed and moa not in moas_to_be_reallocated:
+                    # This moa is not to be removed.  Therefore, it should be reallocated
                     moas_to_be_reallocated.append(moa)
 
         if len(moas_to_be_reallocated) > 0:
@@ -1128,8 +1218,8 @@ class AuthorisedUserPermit(Approval):
                     raise ValueError('AUP: {} has more than one new moorings without sticker'.format(self.lodgement_number))
 
         # Finally assign mooring(s) to new sticker(s)
-        self._assign_to_new_stickers(moas_to_be_reallocated, proposal)
-        self._handle_stickers_to_be_removed(stickers_to_be_returned)
+        self._assign_to_new_stickers(moas_to_be_reallocated, proposal, stickers_to_be_replaced_for_renewal)
+        self._handle_stickers_to_be_removed(stickers_to_be_returned, stickers_to_be_replaced_for_renewal)
 
         return moas_to_be_reallocated, stickers_to_be_returned
 
@@ -1160,20 +1250,30 @@ class AuthorisedUserPermit(Approval):
                 if moa not in moas_to_be_reallocated:
                     moas_to_be_reallocated.append(moa)
 
-    def _assign_to_new_stickers(self, moas_to_be_replaced, proposal):
-        sticker_to_be_filled = None
-        for moa_to_be_replaced in moas_to_be_replaced:
-            if not sticker_to_be_filled or sticker_to_be_filled.mooringonapproval_set.count() % 4 == 0:
-                # If there is no stickers to fill, create a new sticker
-                sticker_to_be_filled = Sticker.objects.create(
+    def _assign_to_new_stickers(self, moas_to_be_on_new_sticker, proposal, stickers_to_be_replaced_for_renewal=[]):
+        new_sticker = None
+        for moa_to_be_on_new_sticker in moas_to_be_on_new_sticker:
+            if not new_sticker or new_sticker.mooringonapproval_set.count() % 4 == 0:
+                # There is no stickers to fill, or there is a sticker but already be filled with 4 moas, create a new sticker
+                if proposal.proposal_type.code == PROPOSAL_TYPE_AMENDMENT and proposal.vessel_ownership != proposal.previous_application.vessel_ownership:
+                    new_status = Sticker.STICKER_STATUS_NOT_READY_YET  # This sticker gets 'ready' status once the sticker with 'to be returned' status is returned.
+                else:
+                    new_status = Sticker.STICKER_STATUS_READY
+                new_sticker = Sticker.objects.create(
                     approval=self,
-                    vessel_ownership=moa_to_be_replaced.sticker.vessel_ownership if moa_to_be_replaced.sticker else proposal.vessel_ownership,
-                    fee_constructor=proposal.fee_constructor if proposal.fee_constructor else moa_to_be_replaced.sticker.fee_constructor if moa_to_be_replaced.sticker else None,
+                    vessel_ownership=moa_to_be_on_new_sticker.sticker.vessel_ownership if moa_to_be_on_new_sticker.sticker else proposal.vessel_ownership,
+                    fee_constructor=proposal.fee_constructor if proposal.fee_constructor else moa_to_be_on_new_sticker.sticker.fee_constructor if moa_to_be_on_new_sticker.sticker else None,
                     proposal_initiated=proposal,
                     fee_season=self.latest_applied_season,
+                    status=new_status
                 )
-            moa_to_be_replaced.sticker = sticker_to_be_filled  # Update moa
-            moa_to_be_replaced.save()
+            if moa_to_be_on_new_sticker.sticker in stickers_to_be_replaced_for_renewal:
+                # Store old sticker in the new sticker in order to set 'expired' status to it once the new sticker gets 'current' status
+                new_sticker.sticker_to_replace = moa_to_be_on_new_sticker.sticker
+                new_sticker.save()
+            # Update moa by a new sticker
+            moa_to_be_on_new_sticker.sticker = new_sticker
+            moa_to_be_on_new_sticker.save()
 
 
 class MooringLicence(Approval):
@@ -1222,6 +1322,8 @@ class MooringLicence(Approval):
                 authorised_person['email_address'] = aup.submitter.email
                 authorised_persons.append(authorised_person)
 
+        today = datetime.datetime.now(pytz.timezone(settings.TIME_ZONE)).date()
+
         context = {
             'approval': self,
             'application': self.current_proposal,
@@ -1229,51 +1331,64 @@ class MooringLicence(Approval):
             'applicant_first_name': self.submitter.first_name,
             'mooring_name': self.mooring.name,
             'authorised_persons': authorised_persons,
+            'public_url': get_public_url(),
+            'doc_generated_date': today.strftime('%d/%m/%Y'),
         }
 
         return context
 
     def get_context_for_licence_permit(self):
-        # Return context for the licence/permit document
-        licenced_vessel = None
-        additional_vessels = []
+        try:
+            logger.info("self.issue_date: {}".format(self.issue_date))
+            logger.info("self.expiry_date: {}".format(self.expiry_date))
+            # Return context for the licence/permit document
+            licenced_vessel = None
+            additional_vessels = []
 
-        max_vessel_length = 0
-        for vessel in self.current_vessels:
-            v = {}
-            v['vessel_rego_no'] = vessel['rego_no']
-            v['vessel_name'] = vessel['latest_vessel_details'].vessel_name
-            v['vessel_length'] = vessel['latest_vessel_details'].vessel_applicable_length
-            v['vessel_draft'] = vessel['latest_vessel_details'].vessel_draft
-            if not licenced_vessel:
-                # No licenced vessel stored yet
-                licenced_vessel = v
-            else:
-                if licenced_vessel['vessel_length'] < v['vessel_length']:
-                    # Found a larger vessel than the one stored as a licenced.  Replace it by the larger one.
-                    additional_vessels.append(licenced_vessel)
+            max_vessel_length = 0
+            for vessel in self.current_vessels:
+                v = {}
+                v['vessel_rego_no'] = vessel['rego_no']
+                v['vessel_name'] = vessel['latest_vessel_details'].vessel_name
+                v['vessel_length'] = vessel['latest_vessel_details'].vessel_applicable_length
+                v['vessel_draft'] = vessel['latest_vessel_details'].vessel_draft
+                if not licenced_vessel:
+                    # No licenced vessel stored yet
                     licenced_vessel = v
+                else:
+                    if licenced_vessel['vessel_length'] < v['vessel_length']:
+                        # Found a larger vessel than the one stored as a licenced.  Replace it by the larger one.
+                        additional_vessels.append(licenced_vessel)
+                        licenced_vessel = v
 
-        context = {
-            'approval': self,
-            'application': self.current_proposal,
-            'issue_date': self.issue_date.strftime('%d/%m/%Y'),
-            'applicant_name': self.submitter.get_full_name(),
-            'p_address_line1': self.postal_address_line1,
-            'p_address_line2': self.postal_address_line2,
-            'p_address_suburb': self.postal_address_suburb,
-            'p_address_state': self.postal_address_state,
-            'p_address_postcode': self.postal_address_postcode,
-            'licenced_vessel': licenced_vessel,  # vessel_rego_no, vessel_name, vessel_length, vessel_draft
-            'additional_vessels': additional_vessels,
-            'mooring': self.mooring,
-            'expiry_date': self.expiry_date.strftime('%d/%m/%Y')
-        }
-        return context
+            context = {
+                'approval': self,
+                'application': self.current_proposal,
+                'issue_date': self.issue_date.strftime('%d/%m/%Y'),
+                'applicant_name': self.submitter.get_full_name(),
+                'p_address_line1': self.postal_address_line1,
+                'p_address_line2': self.postal_address_line2,
+                'p_address_suburb': self.postal_address_suburb,
+                'p_address_state': self.postal_address_state,
+                'p_address_postcode': self.postal_address_postcode,
+                'licenced_vessel': licenced_vessel,  # vessel_rego_no, vessel_name, vessel_length, vessel_draft
+                'additional_vessels': additional_vessels,
+                'mooring': self.mooring,
+                'expiry_date': self.expiry_date.strftime('%d/%m/%Y'),
+                'public_url': get_public_url(),
+            }
+            return context
+        except Exception as e:
+            logger.error("get_context_for_licence_permit")
+            logger.error(e)
+            raise e
 
     def save(self, *args, **kwargs):
         if self.lodgement_number == '':
             self.lodgement_number = self.prefix + '{0:06d}'.format(self.next_id)
+        kwargs.pop('version_user', None)
+        kwargs.pop('version_comment', None)
+        kwargs['no_revision'] = True
         super(Approval, self).save(*args, **kwargs)
 
     def internal_reissue(self):
@@ -1328,13 +1443,27 @@ class MooringLicence(Approval):
                 )
             stickers_required.append(sticker)
 
-        # Calculate the stickers which are no longer needed.  Some stickers could be in the 'awaiting_printing'/'to_be_returned' status.
-        stickers_to_be_returned = [sticker for sticker in stickers_present if sticker not in stickers_required]
+        if proposal.proposal_type.code == PROPOSAL_TYPE_RENEWAL:
+            for sticker_to_be_replaced in stickers_required:
+                new_sticker = Sticker.objects.create(
+                    approval=self,
+                    vessel_ownership=sticker_to_be_replaced.vessel_ownership,
+                    fee_constructor=proposal.fee_constructor if proposal.fee_constructor else sticker_to_be_replaced.fee_constructor if sticker_to_be_replaced else None,
+                    proposal_initiated=proposal,
+                    fee_season=self.latest_applied_season,
+                )
+                new_sticker.sticker_to_replace = sticker_to_be_replaced
+                new_sticker.save()
+            return [], []  # Is this correct?
 
-        # Update sticker status
-        self._handle_stickers_to_be_removed(stickers_to_be_returned)
+        else:
+            # Calculate the stickers which are no longer needed.  Some stickers could be in the 'awaiting_printing'/'to_be_returned' status.
+            stickers_to_be_returned = [sticker for sticker in stickers_present if sticker not in stickers_required]
 
-        return [], stickers_to_be_returned
+            # Update sticker status
+            self._handle_stickers_to_be_removed(stickers_to_be_returned)
+
+            return [], stickers_to_be_returned
 
     def current_vessel_attributes(self, attribute=None):
         attribute_list = []
@@ -1350,17 +1479,25 @@ class MooringLicence(Approval):
             elif attribute == 'vessel':
                 attribute_list.append(vooa.vessel_ownership.vessel)
             elif attribute == 'current_vessels':
-                attribute_list.append({
-                    "rego_no": vooa.vessel_ownership.vessel.rego_no,
-                    "latest_vessel_details": vooa.vessel_ownership.vessel.latest_vessel_details
-                    })
+                if not (vooa.vessel_ownership.vessel.rego_no == self.current_proposal.rego_no):
+                    attribute_list.append({
+                        "rego_no": vooa.vessel_ownership.vessel.rego_no,
+                        "latest_vessel_details": vooa.vessel_ownership.vessel.latest_vessel_details
+                        })
             elif attribute == 'current_vessels_rego':
-                attribute_list.append(vooa.vessel_ownership.vessel.rego_no)
+                if not (vooa.vessel_ownership.vessel.rego_no == self.current_proposal.rego_no):
+                    attribute_list.append(vooa.vessel_ownership.vessel.rego_no)
         return attribute_list
 
     @property
     def vessel_list(self):
         return self.current_vessel_attributes('vessel')
+
+    def get_most_recent_end_date(self):
+        # This function returns None if no vessels have been sold
+        # If even one vessel has been sold, this function returns the end_date even if there is a current vessel.
+        proposal = self.proposal_set.latest('vessel_ownership__end_date')
+        return proposal.vessel_ownership.end_date
 
     @property
     def vessel_list_for_payment(self):
@@ -1444,6 +1581,7 @@ class ApprovalUserAction(UserAction):
     ACTION_RENEW_APPROVAL = "Create renewal Application for licence {}"
     ACTION_AMEND_APPROVAL = "Create amendment Application for licence {}"
     ACTION_REISSUE_APPROVAL = "Reissue licence {}"
+    ACTION_REISSUE_APPROVAL_ML = "Reissued due to change in Mooring Licence {}"
 
     class Meta:
         app_label = 'mooringlicensing'
@@ -1569,6 +1707,7 @@ class DcvAdmissionArrival(RevisionedMixin):
             'vessel_rego_no': self.dcv_admission.dcv_vessel.rego_no,
             'vessel_name': self.dcv_admission.dcv_vessel.vessel_name,
             'arrival': self.get_summary(),
+            'public_url': get_public_url(),
         }
         return context
 
@@ -1576,7 +1715,7 @@ class DcvAdmissionArrival(RevisionedMixin):
         return '{} ({}-{})'.format(self.dcv_admission, self.arrival_date, self.departure_date)
 
     def get_summary(self):
-        summary_dict = {'arrival_date': self.arrival_date, 'departure_date': self.departure_date}
+        summary_dict = {'arrival_date': self.arrival_date.strftime('%d/%m/%Y') if self.arrival_date else '', 'departure_date': self.departure_date.strftime('%d/%m/%Y') if self.departure_date else ''}
         for age_group_choice in AgeGroup.NAME_CHOICES:
             age_group = AgeGroup.objects.get(code=age_group_choice[0])
             dict_type = {}
@@ -1740,8 +1879,8 @@ class DcvPermit(RevisionedMixin):
     def get_context_for_licence_permit(self):
         context = {
             'lodgement_number': self.lodgement_number,
-            'organisation_name': self.dcv_organisation.name,
-            'organisation_abn': self.dcv_organisation.abn,
+            'organisation_name': self.dcv_organisation.name if self.dcv_organisation else '',
+            'organisation_abn': self.dcv_organisation.abn if self.dcv_organisation else '',
             'issue_date': self.lodgement_datetime.strftime('%d/%m/%Y'),
             'p_address_line1': self.postal_address_line1,
             'p_address_line2': self.postal_address_line2,
@@ -1751,6 +1890,7 @@ class DcvPermit(RevisionedMixin):
             'vessel_rego_no': self.dcv_vessel.rego_no,
             'vessel_name': self.dcv_vessel.vessel_name,
             'expiry_date': self.end_date.strftime('%d/%m/%Y'),
+            'public_url': get_public_url(),
         }
         return context
 
@@ -1865,6 +2005,7 @@ class DcvPermitDocument(Document):
 
 class Sticker(models.Model):
     STICKER_STATUS_READY = 'ready'
+    STICKER_STATUS_NOT_READY_YET = 'not_ready_yet'
     STICKER_STATUS_AWAITING_PRINTING = 'awaiting_printing'
     STICKER_STATUS_CURRENT = 'current'
     STICKER_STATUS_TO_BE_RETURNED = 'to_be_returned'
@@ -1874,6 +2015,7 @@ class Sticker(models.Model):
     STICKER_STATUS_CANCELLED = 'cancelled'
     STATUS_CHOICES = (
         (STICKER_STATUS_READY, 'Ready'),
+        (STICKER_STATUS_NOT_READY_YET, 'Not Ready Yet'),
         (STICKER_STATUS_AWAITING_PRINTING, 'Awaiting Printing'),
         (STICKER_STATUS_CURRENT, 'Current'),
         (STICKER_STATUS_TO_BE_RETURNED, 'To be Returned'),
@@ -1910,6 +2052,7 @@ class Sticker(models.Model):
     fee_season = models.ForeignKey('FeeSeason', blank=True, null=True)
     vessel_ownership = models.ForeignKey('VesselOwnership', blank=True, null=True)
     proposal_initiated = models.ForeignKey('Proposal', blank=True, null=True)  # This propposal created this sticker object.  Can be None when sticker created by RequestNewSticker action or so.
+    sticker_to_replace = models.ForeignKey('self', null=True, blank=True)  # This sticker object replaces the sticker_to_replace for renewal
 
     class Meta:
         app_label = 'mooringlicensing'
@@ -1949,10 +2092,33 @@ class Sticker(models.Model):
     def record_lost(self):
         self.status = Sticker.STICKER_STATUS_LOST
         self.save()
+        self.update_other_stickers()
 
     def record_returned(self):
         self.status = Sticker.STICKER_STATUS_RETURNED
         self.save()
+        self.update_other_stickers()
+
+    def update_other_stickers(self):
+        stickers_not_ready_yet = self.approval.stickers.filter(status=Sticker.STICKER_STATUS_NOT_READY_YET)
+        stickers_to_be_returned = self.approval.stickers.filter(status=Sticker.STICKER_STATUS_TO_BE_RETURNED)
+        proposals_initiated = []
+        if not stickers_to_be_returned.count():
+            # If there are no stickers with 'To be returned', change 'Not ready yet' stickers to 'Ready' so that it is picked up for exporting.
+            for sticker in stickers_not_ready_yet:
+                sticker.status = Sticker.STICKER_STATUS_READY
+                sticker.save()
+                if sticker.proposal_initiated and sticker.proposal_initiated not in proposals_initiated:
+                    proposals_initiated.append(sticker.proposal_initiated)
+        for proposal in proposals_initiated:
+            if proposal.processing_status == Proposal.PROCESSING_STATUS_STICKER_TO_BE_RETURNED:
+                stickers_to_be_returned = Sticker.objects.filter(status=Sticker.STICKER_STATUS_TO_BE_RETURNED, proposal_initiated=proposal)
+                if not stickers_to_be_returned:
+                    # If proposal is in 'Sticker to be Returned' status and there are no stickers with 'To be returned' status,
+                    # this proposal should get the status 'Printing Sticker'
+                    proposal.processing_status = Proposal.PROCESSING_STATUS_PRINTING_STICKER
+                    proposal.customer_status = Proposal.CUSTOMER_STATUS_PRINTING_STICKER
+                    proposal.save()
 
     def request_replacement(self, new_status):
         self.status = new_status
@@ -2097,27 +2263,32 @@ def delete_documents(sender, instance, *args, **kwargs):
 
 
 import reversion
-reversion.register(Approval, follow=['waitinglistallocation', 'annualadmissionpermit', 'authoriseduserpermit', 'mooringlicence', 
-    'compliances', 'documents', 'comms_logs', 'action_logs', "renewal_documents",
-    ])
-reversion.register(WaitingListAllocation)
-reversion.register(AuthorisedUserPermit)
-reversion.register(AnnualAdmissionPermit)
-reversion.register(MooringLicence)
-reversion.register(ApprovalDocument, follow=['licence_document', 'cover_letter_document',])
+reversion.register(WaitingListOfferDocument, follow=[])
+reversion.register(RenewalDocument, follow=['renewal_document'])
+reversion.register(AuthorisedUserSummaryDocument, follow=['approvals'])
+reversion.register(ApprovalDocument, follow=['approvalhistory_set', 'licence_document', 'cover_letter_document'])
+reversion.register(MooringOnApproval, follow=['approval', 'mooring', 'sticker'])
+reversion.register(VesselOwnershipOnApproval, follow=['approval', 'vessel_ownership'])
+reversion.register(ApprovalHistory, follow=[])
+#reversion.register(Approval, follow=['proposal_set', 'ria_generated_proposal', 'waiting_list_offer_documents', 'renewal_documents', 'authorised_user_summary_documents', 'documents', 'mooringonapproval_set', 'vesselownershiponapproval_set', 'approvalhistory_set', 'replace', 'comms_logs', 'action_logs', 'stickers', 'compliances'])
+reversion.register(Approval)
+reversion.register(WaitingListAllocation, follow=['proposal_set', 'ria_generated_proposal', 'waiting_list_offer_documents', 'renewal_documents', 'authorised_user_summary_documents', 'documents', 'mooringonapproval_set', 'vesselownershiponapproval_set', 'approvalhistory_set', 'replace', 'comms_logs', 'action_logs', 'stickers', 'compliances'])
+reversion.register(AnnualAdmissionPermit, follow=['proposal_set', 'ria_generated_proposal', 'waiting_list_offer_documents', 'renewal_documents', 'authorised_user_summary_documents', 'documents', 'mooringonapproval_set', 'vesselownershiponapproval_set', 'approvalhistory_set', 'replace', 'comms_logs', 'action_logs', 'stickers', 'compliances'])
+reversion.register(AuthorisedUserPermit, follow=['proposal_set', 'ria_generated_proposal', 'waiting_list_offer_documents', 'renewal_documents', 'authorised_user_summary_documents', 'documents', 'mooringonapproval_set', 'vesselownershiponapproval_set', 'approvalhistory_set', 'replace', 'comms_logs', 'action_logs', 'stickers', 'compliances'])
+reversion.register(MooringLicence, follow=['proposal_set', 'ria_generated_proposal', 'waiting_list_offer_documents', 'renewal_documents', 'authorised_user_summary_documents', 'documents', 'mooringonapproval_set', 'vesselownershiponapproval_set', 'approvalhistory_set', 'replace', 'comms_logs', 'action_logs', 'stickers', 'compliances', 'mooring'])
+reversion.register(PreviewTempApproval, follow=['proposal_set', 'ria_generated_proposal', 'waiting_list_offer_documents', 'renewal_documents', 'authorised_user_summary_documents', 'documents', 'mooringonapproval_set', 'vesselownershiponapproval_set', 'approvalhistory_set', 'replace', 'comms_logs', 'action_logs', 'stickers', 'compliances'])
 reversion.register(ApprovalLogEntry, follow=['documents'])
-reversion.register(ApprovalLogDocument)
-reversion.register(ApprovalUserAction)
-reversion.register(MooringOnApproval, follow=["approval", "mooring", "sticker"])
-reversion.register(VesselOwnershipOnApproval, follow=["approval", "vessel_ownership"])
-reversion.register(ApprovalHistory, follow=["approval", "vessel_ownership", "proposal"])
-reversion.register(DcvOrganisation)
-reversion.register(DcvVessel, follow=["dcv_organisation"])
-reversion.register(DcvAdmission, follow=["dcv_vessel", "admissions"])
-reversion.register(DcvAdmissionArrival, follow=["dcv_admission", "fee_season", "fee_constructor"])
-reversion.register(DcvPermit, follow=["fee_season", "dcv_vessel", "dcv_organisation", "permits"])
-reversion.register(DcvAdmissionDocument)
-reversion.register(DcvPermitDocument)
-reversion.register(Sticker, follow=["approval", "dcv_permit", "fee_constructor", "fee_season", "vessel_ownership", "proposal_initiated"])
-reversion.register(RenewalDocument)
-
+reversion.register(ApprovalLogDocument, follow=[])
+reversion.register(ApprovalUserAction, follow=[])
+reversion.register(DcvOrganisation, follow=['dcvvessel_set', 'dcvpermit_set'])
+reversion.register(DcvVessel, follow=['dcv_admissions', 'dcv_permits'])
+reversion.register(DcvAdmission, follow=['dcv_admission_fees', 'dcv_admission_arrivals', 'admissions'])
+reversion.register(DcvAdmissionArrival, follow=['numberofpeople_set'])
+reversion.register(AgeGroup, follow=['feeitem_set', 'numberofpeople_set'])
+reversion.register(AdmissionType, follow=['feeitem_set', 'numberofpeople_set'])
+reversion.register(NumberOfPeople, follow=[])
+reversion.register(DcvPermit, follow=['dcv_permit_fees', 'permits', 'stickers'])
+reversion.register(DcvAdmissionDocument, follow=[])
+reversion.register(DcvPermitDocument, follow=[])
+reversion.register(Sticker, follow=['mooringonapproval_set', 'approvalhistory_set', 'sticker_action_details'])
+reversion.register(StickerActionDetail, follow=[])

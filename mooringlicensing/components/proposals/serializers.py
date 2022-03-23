@@ -136,7 +136,8 @@ class BaseProposalSerializer(serializers.ModelSerializer):
     proposal_type = ProposalTypeSerializer()
     invoices = serializers.SerializerMethodField()
     start_date = serializers.ReadOnlyField()
-    end_date = serializers.ReadOnlyField()
+    # 20220308: end_date req in this serializer?
+    #end_date = serializers.ReadOnlyField()
     previous_application_vessel_details_id = serializers.SerializerMethodField()
     previous_application_preferred_bay_id = serializers.SerializerMethodField()
     current_vessels_rego_list = serializers.SerializerMethodField()
@@ -153,7 +154,7 @@ class BaseProposalSerializer(serializers.ModelSerializer):
         fields = (
                 'id',
                 'start_date',
-                'end_date',
+                #'end_date',
                 'application_type_code',
                 'application_type_text',
                 'approval_type_text',
@@ -222,6 +223,8 @@ class BaseProposalSerializer(serializers.ModelSerializer):
                 'previous_application_vessel_details_obj',
                 'previous_application_vessel_ownership_obj',
                 'max_vessel_length_with_no_payment',
+                'keep_existing_mooring',
+                'keep_existing_vessel',
                 )
         read_only_fields=('documents',)
 
@@ -236,12 +239,15 @@ class BaseProposalSerializer(serializers.ModelSerializer):
         if (obj.previous_application and obj.previous_application.vessel_details):
             return VesselOwnershipSerializer(obj.previous_application.vessel_ownership).data
 
+    #def get_authorised_user_moorings_str(self, obj):
+    #    moorings_str = ''
+    #    if type(obj.child_obj) == AuthorisedUserApplication and obj.approval:
+    #        for moa in obj.approval.mooringonapproval_set.all():
+    #            moorings_str += moa.mooring.name + ','
+    #        return moorings_str[0:-1] if moorings_str else ''
     def get_authorised_user_moorings_str(self, obj):
-        moorings_str = ''
         if type(obj.child_obj) == AuthorisedUserApplication and obj.approval:
-            for moa in obj.approval.mooringonapproval_set.all():
-                moorings_str += moa.mooring.name + ','
-            return moorings_str[0:-1] if moorings_str else ''
+            return obj.approval.child_obj.previous_moorings()
 
     def get_waiting_list_application_id(self, obj):
         wla_id = None
@@ -547,6 +553,7 @@ class SaveMooringLicenceApplicationSerializer(serializers.ModelSerializer):
                 'customer_status',
                 'processing_status',
                 'temporary_document_collection_id',
+                'keep_existing_vessel',
                 )
         read_only_fields=('id',)
 
@@ -644,6 +651,7 @@ class SaveDraftProposalVesselSerializer(serializers.ModelSerializer):
                 'dot_name',
                 'temporary_document_collection_id',
                 'keep_existing_mooring',
+                'keep_existing_vessel',
                 )
 
 
@@ -674,6 +682,10 @@ class InternalProposalSerializer(BaseProposalSerializer):
     reissued = serializers.SerializerMethodField()
     current_vessels_rego_list = serializers.SerializerMethodField()
     application_type_code = serializers.SerializerMethodField()
+    authorised_user_moorings_str = serializers.SerializerMethodField()
+    waiting_list_application_id = serializers.SerializerMethodField()
+    approval_type_text = serializers.SerializerMethodField()
+    approval_lodgement_number = serializers.SerializerMethodField()
 
     class Meta:
         model = Proposal
@@ -681,7 +693,8 @@ class InternalProposalSerializer(BaseProposalSerializer):
                 'id',
                 'migrated',
                 'start_date',
-                'end_date',
+                # 20220308: end_date req in this serializer?
+                #'end_date',
                 'application_type',
                 'approval_level',
                 'approval_level_document',
@@ -741,11 +754,51 @@ class InternalProposalSerializer(BaseProposalSerializer):
                 'dot_name',
                 'current_vessels_rego_list',
                 'application_type_code',
+                'authorised_user_moorings_str',
+                'keep_existing_mooring',
+                'keep_existing_vessel',
+                # draft status
+                'rego_no',
+                'vessel_id',
+                'vessel_details_id',
+                'vessel_ownership_id',
+                'vessel_type',
+                'vessel_name',
+                'vessel_length',
+                'vessel_draft',
+                'vessel_beam',
+                'vessel_weight',
+                'berth_mooring',
+                'dot_name',
+                'percentage',
+                #'editable_vessel_details',
+                'individual_owner',
+                'company_ownership_name',
+                'company_ownership_percentage',
+                'waiting_list_application_id',
+                'pending_amendment_request',
+                'approval_type_text',
+                'approval_lodgement_number',
                 )
         read_only_fields = (
             'documents',
             'requirements',
         )
+
+    def get_approval_type_text(self, obj):
+        return obj.approval.child_obj.description if obj.approval else None
+
+    def get_approval_lodgement_number(self, obj):
+        lodgement_number = None
+        if obj.approval:
+            lodgement_number = obj.approval.lodgement_number
+        return lodgement_number
+
+    def get_waiting_list_application_id(self, obj):
+        wla_id = None
+        if obj.waiting_list_allocation:
+            wla_id = obj.waiting_list_allocation.current_proposal.id
+        return wla_id
 
     def get_application_type_code(self, obj):
         return obj.application_type_code
@@ -758,6 +811,16 @@ class InternalProposalSerializer(BaseProposalSerializer):
 
     def get_reissued(self, obj):
         return obj.approval.reissued if obj.approval else False
+
+    def get_authorised_user_moorings_str(self, obj):
+        if type(obj.child_obj) == AuthorisedUserApplication and obj.approval:
+            return obj.approval.child_obj.previous_moorings()
+    #def get_authorised_user_moorings_str(self, obj):
+    #    moorings_str = ''
+    #    if type(obj.child_obj) == AuthorisedUserApplication and obj.approval:
+    #        for moa in obj.approval.mooringonapproval_set.all():
+    #            moorings_str += moa.mooring.name + ','
+    #        return moorings_str[0:-1] if moorings_str else ''
 
     def get_authorised_user_moorings(self, obj):
         moorings = []
@@ -1160,6 +1223,7 @@ class VesselFullOwnershipSerializer(serializers.ModelSerializer):
     end_date = serializers.SerializerMethodField()
     owner_phone_number = serializers.SerializerMethodField()
     individual_owner = serializers.SerializerMethodField()
+    action_link = serializers.SerializerMethodField()
 
     class Meta:
         model = VesselOwnership
@@ -1174,7 +1238,11 @@ class VesselFullOwnershipSerializer(serializers.ModelSerializer):
                 'owner_phone_number',
                 'individual_owner',
                 'dot_name',
+                'action_link',
                 )
+
+    def get_action_link(self, obj):
+        return '/internal/person/{}'.format(obj.owner.emailuser.id)
 
     def get_owner_full_name(self, obj):
         return obj.owner.emailuser.get_full_name()

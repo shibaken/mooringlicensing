@@ -568,7 +568,7 @@ def submit_vessel_data(instance, request, vessel_data):
         if instance.vessel_details.vessel_applicable_length < min_vessel_size:
             logger.error("Proposal {}: Vessel must be at least {}m in length".format(instance, min_vessel_size_str))
             raise serializers.ValidationError("Vessel must be at least {}m in length".format(min_vessel_size_str))
-        # proposal
+        # check new site licensee mooring
         proposal_data = request.data.get('proposal') if request.data.get('proposal') else {}
         mooring_id = proposal_data.get('mooring_id')
         if mooring_id and proposal_data.get('site_licensee_email'):
@@ -577,6 +577,16 @@ def submit_vessel_data(instance, request, vessel_data):
             instance.vessel_details.vessel_draft > mooring.vessel_draft_limit):
                 logger.error("Proposal {}: Vessel unsuitable for mooring".format(instance))
                 raise serializers.ValidationError("Vessel unsuitable for mooring")
+        # amend / renewal
+        if instance.approval:
+            # check existing moorings against current vessel dimensions
+            for moa in instance.approval.mooringonapproval_set.filter(end_date__isnull=True):
+                mooring = Mooring.objects.get(id=moa.mooring_id)
+                if (instance.vessel_details.vessel_applicable_length > mooring.vessel_size_limit or
+                instance.vessel_details.vessel_draft > mooring.vessel_draft_limit):
+                    logger.error("Proposal {}: Vessel unsuitable for one or more moorings".format(instance))
+                    raise serializers.ValidationError("Vessel unsuitable for one or more moorings")
+
     elif type(instance.child_obj) == WaitingListApplication:
         if instance.vessel_details.vessel_applicable_length < min_mooring_vessel_size:
             logger.error("Proposal {}: Vessel must be at least {}m in length".format(instance, min_mooring_vessel_size_str))
@@ -609,7 +619,8 @@ def submit_vessel_data(instance, request, vessel_data):
     proposals_mla = []
     proposals_aaa = []
     proposals_aua = []
-    approvals = [ah.approval for ah in ApprovalHistory.objects.filter(end_date=None, vessel_ownership__vessel=vessel)]
+    # 20220311 - add exclusion for amendment applications
+    approvals = [ah.approval for ah in ApprovalHistory.objects.filter(end_date=None, vessel_ownership__vessel=vessel).exclude(approval_id=instance.approval_id)]
     approvals = list(dict.fromkeys(approvals))  # remove duplicates
     approvals_wla = []
     approvals_ml = []
@@ -627,22 +638,26 @@ def submit_vessel_data(instance, request, vessel_data):
         if type(proposal) == AuthorisedUserApplication and proposal.processing_status not in ['approved', 'declined', 'discarded']:
             proposals_aua.append(proposal)
     for approval in approvals:
-        if type(approval) == WaitingListAllocation and approval.status == 'current':
+        if type(approval.child_obj) == WaitingListAllocation and approval.status in settings.APPROVED_APPROVAL_STATUS:
             approvals_wla.append(approval)
-        if type(approval) == MooringLicence and approval.status == 'current':
+        if type(approval.child_obj) == MooringLicence and approval.status in settings.APPROVED_APPROVAL_STATUS:
             approvals_ml.append(approval)
-        if type(approval) == MooringLicence and approval.status in ['current', 'suspended']:
-            approvals_ml_sus.append(approval)
-        if type(approval) == AnnualAdmissionPermit and approval.status == 'current':
+        #if type(approval) == MooringLicence and approval.status in settings.APPROVED_APPROVAL_STATUS:
+         #   approvals_ml_sus.append(approval)
+        if type(approval.child_obj) == AnnualAdmissionPermit and approval.status in settings.APPROVED_APPROVAL_STATUS:
             approvals_aap.append(approval)
-        if type(approval) == AuthorisedUserPermit and approval.status == 'current':
+        if type(approval.child_obj) == AuthorisedUserPermit and approval.status in settings.APPROVED_APPROVAL_STATUS:
             approvals_aup.append(approval)
-        if type(approval) == AuthorisedUserPermit and approval.status in ['current', 'suspended']:
-            approvals_aup_sus.append(approval)
+        #if type(approval) == AuthorisedUserPermit and approval.status in settings.APPROVED_APPROVAL_STATUS:
+         #   approvals_aup_sus.append(approval)
     # apply rules
     if (type(instance.child_obj) == WaitingListApplication and (proposals_wla or approvals_wla or
-            proposals_mla or approvals_ml_sus)):
-        association_fail = True
+            proposals_mla or approvals_ml)):
+        #association_fail = True
+        raise serializers.ValidationError("The vessel in the application is already listed in " +  
+        ", ".join(['{} {} '.format(proposal.description, proposal.lodgement_number) for proposal in proposals_wla]) +
+        ", ".join(['{} {} '.format(approval.description, approval.lodgement_number) for approval in approvals_wla])
+        )
     # Person can have only one WLA, Waiting Liast application, Mooring Licence and Mooring Licence application
     elif (type(instance.child_obj) == WaitingListApplication and (
         WaitingListApplication.objects.filter(submitter=instance.submitter).exclude(processing_status__in=['approved', 'declined', 'discarded']).exclude(id=instance.id) or
@@ -652,14 +667,30 @@ def submit_vessel_data(instance, request, vessel_data):
         ):
         raise serializers.ValidationError("Person can have only one WLA, Waiting List application, Mooring Licence and Mooring Licence application")
     elif (type(instance.child_obj) == AnnualAdmissionApplication and (proposals_aaa or approvals_aap or
-            proposals_aua or approvals_aup_sus or proposals_mla or approvals_ml_sus)):
-        association_fail = True
+            proposals_aua or approvals_aup or proposals_mla or approvals_ml)):
+        #association_fail = True
+        raise serializers.ValidationError("The vessel in the application is already listed in " +  
+        ", ".join(['{} {} '.format(proposal.description, proposal.lodgement_number) for proposal in proposals_aaa]) +
+        ", ".join(['{} {} '.format(proposal.description, proposal.lodgement_number) for proposal in proposals_aua]) +
+        ", ".join(['{} {} '.format(proposal.description, proposal.lodgement_number) for proposal in proposals_mla]) +
+        ", ".join(['{} {} '.format(approval.description, approval.lodgement_number) for approval in approvals_aap]) +
+        ", ".join(['{} {} '.format(approval.description, approval.lodgement_number) for approval in approvals_aup]) +
+        ", ".join(['{} {} '.format(approval.description, approval.lodgement_number) for approval in approvals_ml])
+        )
     elif type(instance.child_obj) == AuthorisedUserApplication and (proposals_aua or approvals_aup):
-        association_fail = True
+        #association_fail = True
+        raise serializers.ValidationError("The vessel in the application is already listed in " +  
+        ", ".join(['{} {} '.format(proposal.description, proposal.lodgement_number) for proposal in proposals_aua]) +
+        ", ".join(['{} {} '.format(approval.description, approval.lodgement_number) for approval in approvals_aup])
+        )
     elif type(instance.child_obj) == MooringLicenceApplication and (proposals_mla or approvals_ml):
-        association_fail = True
-    if association_fail:
-        raise serializers.ValidationError("This vessel is already part of another application/permit/licence")
+        #association_fail = True
+        raise serializers.ValidationError("The vessel in the application is already listed in " +  
+        ", ".join(['{} {} '.format(proposal.description, proposal.lodgement_number) for proposal in proposals_mla]) +
+        ", ".join(['{} {} '.format(approval.description, approval.lodgement_number) for approval in approvals_ml])
+        )
+    #if association_fail:
+     #   raise serializers.ValidationError("This vessel is already part of another application/permit/licence")
 
     ## vessel ownership cannot be greater than 100%
     ownership_percentage_validation(vessel_ownership)

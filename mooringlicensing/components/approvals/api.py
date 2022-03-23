@@ -352,7 +352,8 @@ class ApprovalViewSet(viewsets.ModelViewSet):
         existing_licences = []
         l_list = Approval.objects.filter(
                 submitter=request.user,
-                status__in=['current', 'fulfilled'],
+                #status__in=['current', 'fulfilled'],
+                status__in=['current'],
                 )
         for l in l_list:
             lchild = l.child_obj
@@ -422,11 +423,13 @@ class ApprovalViewSet(viewsets.ModelViewSet):
         sticker_action_details = []
         stickers = Sticker.objects.filter(approval=approval, id__in=sticker_ids, status__in=(Sticker.STICKER_STATUS_CURRENT, Sticker.STICKER_STATUS_AWAITING_PRINTING,))
         data = {}
+        today = datetime.datetime.now(pytz.timezone(settings.TIME_ZONE)).date()
         for sticker in stickers:
             data['action'] = 'Request new sticker'
             data['user'] = request.user.id
             data['reason'] = details['reason']
-            serializer = StickerActionDetailSerializer(data=request.data)
+            data['date_of_lost_sticker'] = today.strftime('%d/%m/%Y')
+            serializer = StickerActionDetailSerializer(data=data)
             serializer.is_valid(raise_exception=True)
             new_sticker_action_detail = serializer.save()
             new_sticker_action_detail.sticker = sticker
@@ -882,6 +885,8 @@ class DcvPermitFilterBackend(DatatablesFilterBackend):
         queryset = queryset.order_by(*ordering)
         if len(ordering):
             queryset = queryset.order_by(*ordering)
+        else:
+            queryset = queryset.order_by('-lodgement_number')
 
         try:
             queryset = super(DcvPermitFilterBackend, self).filter_queryset(request, queryset, view)
@@ -906,6 +911,7 @@ class DcvPermitPaginatedViewSet(viewsets.ModelViewSet):
     serializer_class = ListDcvPermitSerializer
     search_fields = ['lodgement_number', ]
     page_size = 10
+    ordering = ['-id']
 
     def get_queryset(self):
         request_user = self.request.user
@@ -1000,6 +1006,8 @@ class DcvAdmissionFilterBackend(DatatablesFilterBackend):
         queryset = queryset.order_by(*ordering)
         if len(ordering):
             queryset = queryset.order_by(*ordering)
+        else:
+            queryset = queryset.order_by('-lodgement_number')
 
         try:
             queryset = super(DcvAdmissionFilterBackend, self).filter_queryset(request, queryset, view)
@@ -1104,7 +1112,7 @@ class StickerViewSet(viewsets.ModelViewSet):
         serializer = StickerSerializer(sticker)
 
         # Write approval history
-        sticker.approval.write_approval_history()
+        # sticker.approval.write_approval_history()
 
         return Response({'sticker': serializer.data})
 

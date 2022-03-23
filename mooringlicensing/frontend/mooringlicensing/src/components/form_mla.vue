@@ -17,12 +17,12 @@
                   Vessel
                 </a>
               </li>
-              <li v-if="showInsuranceTab" class="nav-item">
+              <li v-show="showInsuranceTab" class="nav-item">
                 <a class="nav-link" id="pills-insurance-tab" data-toggle="pill" href="#pills-insurance" role="tab" aria-controls="pills-insurance" aria-selected="false">
                   Insurance
                 </a>
               </li>
-              <li v-if="showPaymentTab" class="nav-item" id="li-payment">
+              <li v-show="showPaymentTab" class="nav-item" id="li-payment">
                 <a class="nav-link disabled" id="pills-payment-tab" data-toggle="pill" href="" role="tab" aria-controls="pills-payment" aria-selected="false">
                   Payment
                 </a>
@@ -74,7 +74,7 @@
                   :profile="profileVar" 
                   :id="'proposalStartVessels' + uuid"
                   :key="'proposalStartVessels' + uuid"
-                  :keep_current_vessel=keep_current_vessel
+                  :keep_current_vessel=keepCurrentVessel
                   ref="vessels"
                   :readonly="readonlyMLA"
                   :is_internal="is_internal"
@@ -165,8 +165,10 @@
                 values:null,
                 profile: {},
                 uuid: 0,
-                keep_current_vessel: true,
+                keepCurrentVessel: true,
                 showPaymentTab: false,
+                showInsuranceTab: true,
+                higherVesselCategory: false,
             }
         },
         components: {
@@ -209,6 +211,7 @@
                 }
                 return text;
             },
+            /*
             showInsuranceTab:function(){
                 let show=true;
                 if (this.proposal && this.proposal.proposal_type && this.proposal.proposal_type.code !== 'new' && this.keep_current_vessel){
@@ -216,7 +219,6 @@
                 }
                 return show;
             },
-            /*
             showElectoralRoll: function() {
                 let show = false;
                 if (this.proposal && ['wla', 'mla'].includes(this.proposal.application_type_code)) {
@@ -230,6 +232,7 @@
             vesselChanged: async function(vesselChanged) {
                 await this.$emit("vesselChanged", vesselChanged);
             },
+            /*
             updateVesselLength: function(length) {
                 let higherCategory = false;
                 if (this.is_external && this.proposal) {
@@ -249,11 +252,90 @@
                     this.$emit("updateSubmitText", "Pay / Submit");
                 }
             },
+            */
+            updateVesselLength: function(length) {
+                if (this.is_external && this.proposal) {
+                    if (this.proposal.max_vessel_length_with_no_payment && 
+                        this.proposal.max_vessel_length_with_no_payment <= length) {
+                        // vessel length is in higher category
+                        this.higherVesselCategory = true;
+                    } else {
+                        this.higherVesselCategory = false;
+                    }
+                }
+                this.updateAmendmentRenewalProperties();
+            },
+            resetCurrentVessel: function(keep) {
+                this.keepCurrentVessel = keep;
+                this.uuid++
+                this.updateAmendmentRenewalProperties();
+            },
+            updateAmendmentRenewalProperties: function() {
+                console.log('updateAmendmentRenewalProperties in form_mla.vue')
+                if (this.proposal && this.proposal.proposal_type.code === 'amendment') {
+                    this.$nextTick(() => {
+                        if (!this.keepCurrentVessel) {
+                            this.showPaymentTab = false;
+                            this.showInsuranceTab = true;
+                            this.$emit("updateSubmitText", "Submit");
+                        } else {
+                            this.showPaymentTab = false;
+                            this.showInsuranceTab = false;
+                            this.$emit("updateSubmitText", "Submit");
+                        }
+                    });
+                } else if (this.proposal && this.proposal.proposal_type.code === 'renewal') {
+                    this.$nextTick(() => {
+                        if (this.keepCurrentVessel && !this.higherVesselCategory) {
+                            this.showPaymentTab = true;
+                            this.showInsuranceTab = false;
+                            this.$emit("updateSubmitText", "Pay / Submit");
+                            this.$emit("updateAutoRenew", true);
+                        } else if (!this.keepCurrentVessel) {
+                            this.showPaymentTab = false;
+                            this.showInsuranceTab = true;
+                            this.$emit("updateSubmitText", "Submit");
+                            this.$emit("updateAutoRenew", false);
+                        } else {
+                            this.showPaymentTab = false;
+                            this.showInsuranceTab = false;
+                            this.$emit("updateSubmitText", "Submit");
+                            this.$emit("updateAutoRenew", false);
+                        }
+                    });
+                }
+            },
 
+            /*
             resetCurrentVessel: function(keep) {
                 this.keep_current_vessel = keep;
                 this.uuid++
             },
+            updateAmendmentRenewalProperties: function() {
+                if (this.proposal && ['renewal', 'amendment'].includes(this.proposal.proposal_type.code)) {
+                    this.$nextTick(() => {
+                        if (this.keepCurrentVessel && !this.higherVesselCategory) {
+                            console.log("here")
+                            this.showPaymentTab = true;
+                            this.showInsuranceTab = false;
+                            this.$emit("updateSubmitText", "Pay / Submit");
+                            this.$emit("updateAutoRenew", true);
+                        } else if (this.keepCurrentVessel && this.higherVesselCategory) {
+                            this.showPaymentTab = false;
+                            this.showInsuranceTab = false;
+                            this.$emit("updateSubmitText", "Submit");
+                            this.$emit("updateAutoRenew", false);
+                        } else if (!this.keepCurrentVessel) {
+                            this.showPaymentTab = false;
+                            this.showInsuranceTab = true;
+                            this.$emit("updateSubmitText", "Submit");
+                            this.$emit("updateAutoRenew", false);
+                        }
+                    });
+                }
+            },
+            */
+
             populateProfile: function(profile) {
                 this.profile = Object.assign({}, profile);
             },
@@ -263,22 +345,24 @@
                 /* set Applicant tab Active */
                 $('#pills-tab a[href="#pills-applicant"]').tab('show');
 
+                /*
                 if (vm.proposal.fee_paid) {
-                    /* Online Training tab */
                     $('#pills-online-training-tab').attr('style', 'background-color:#E5E8E8 !important; color: #99A3A4;');
                     $('#li-training').attr('class', 'nav-item disabled');
                     $('#pills-online-training-tab').attr("href", "")
                 }
-
                 if (!vm.proposal.training_completed) {
-                    /* Payment tab  (this is enabled after online_training is completed - in online_training.vue)*/
                     $('#pills-payment-tab').attr('style', 'background-color:#E5E8E8 !important; color: #99A3A4;');
                     $('#li-payment').attr('class', 'nav-item disabled');
                 }
+                */
 
                 /* Confirmation tab - Always Disabled */
                 $('#pills-confirm-tab').attr('style', 'background-color:#E5E8E8 !important; color: #99A3A4;');
                 $('#li-confirm').attr('class', 'nav-item disabled');
+                /* Payment tab - Always Disabled */
+                $('#pills-payment-tab').attr('style', 'background-color:#E5E8E8 !important; color: #99A3A4;');
+                $('#li-payment').attr('class', 'nav-item disabled');
             },
             /*
             eventListener: function(){
@@ -297,6 +381,7 @@
             let vm = this;
             vm.set_tabs();
             vm.form = document.forms.new_proposal;
+            this.updateAmendmentRenewalProperties();
             //vm.eventListener();
             //window.addEventListener('beforeunload', vm.leaving);
             //indow.addEventListener('onblur', vm.leaving);

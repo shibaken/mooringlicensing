@@ -144,12 +144,13 @@ def create_fee_lines(instance, invoice_text=None, vouchers=[], internal=False):
     else:
         raise Exception('Something went wrong when calculating the fee')
 
+    fee_item = fee_constructor.get_fee_item(vessel_length, proposal_type, target_date)
+
+    db_processes_after_success['fee_item_id'] = fee_item.id
     db_processes_after_success['fee_constructor_id'] = fee_constructor.id
     db_processes_after_success['season_start_date'] = fee_constructor.fee_season.start_date.__str__()
     db_processes_after_success['season_end_date'] = fee_constructor.fee_season.end_date.__str__()
     db_processes_after_success['datetime_for_calculating_fee'] = target_datetime.__str__()
-
-    fee_item = fee_constructor.get_fee_item(vessel_length, proposal_type, target_date)
 
     line_items = [
         {
@@ -160,7 +161,8 @@ def create_fee_lines(instance, invoice_text=None, vouchers=[], internal=False):
                 fee_constructor.fee_season.end_date.strftime('%d/%m/%Y'),
                 target_datetime_str,
             ),
-            'oracle_code': application_type.oracle_code,
+            # 'oracle_code': application_type.oracle_code,
+            'oracle_code': ApplicationType.get_current_oracle_code_by_application(application_type.code),
             'price_incl_tax':  fee_item.amount,
             'price_excl_tax':  calculate_excl_gst(fee_item.amount) if fee_constructor.incur_gst else fee_item.amount,
             'quantity': 1,

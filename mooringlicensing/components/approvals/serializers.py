@@ -617,9 +617,9 @@ class ApprovalSerializer(serializers.ModelSerializer):
         return expiry_date
 
 
-
 class ListApprovalSerializer(serializers.ModelSerializer):
     licence_document = serializers.CharField(source='licence_document._file.url')
+    authorised_user_summary_document = serializers.CharField(source='authorised_user_summary_document._file.url')
     renewal_document = serializers.SerializerMethodField(read_only=True)
     status = serializers.SerializerMethodField()
     internal_status = serializers.SerializerMethodField()
@@ -681,6 +681,7 @@ class ListApprovalSerializer(serializers.ModelSerializer):
             'allowed_assessors_user',
             'stickers',
             'licence_document',
+            'authorised_user_summary_document',
             'is_approver',
             'vessel_regos',
         )
@@ -718,6 +719,7 @@ class ListApprovalSerializer(serializers.ModelSerializer):
             'allowed_assessors_user',
             'stickers',
             'licence_document',
+            'authorised_user_summary_document',
             'is_approver',
             'vessel_regos',
         )
@@ -1300,7 +1302,7 @@ class ListDcvAdmissionSerializer(serializers.ModelSerializer):
 
 
 class ApprovalHistorySerializer(serializers.ModelSerializer):
-    reason = serializers.SerializerMethodField()
+    #reason = serializers.SerializerMethodField()
     approval_letter = serializers.CharField(source='approval_letter._file.url')
     sticker_numbers = serializers.SerializerMethodField()
     approval_lodgement_number = serializers.SerializerMethodField()
@@ -1334,8 +1336,8 @@ class ApprovalHistorySerializer(serializers.ModelSerializer):
                 'approval_letter',
                 )
 
-    def get_reason(self, obj):
-        return ''
+    #def get_reason(self, obj):
+     #   return ''
 
     def get_approval_status(self, obj):
         return obj.approval.get_status_display()

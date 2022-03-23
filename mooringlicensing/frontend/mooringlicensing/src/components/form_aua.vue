@@ -17,7 +17,7 @@
                   Vessel
                 </a>
               </li>
-              <li v-if="showInsuranceTab" class="nav-item">
+              <li v-show="showInsuranceTab" class="nav-item">
                 <a class="nav-link" id="pills-insurance-tab" data-toggle="pill" href="#pills-insurance" role="tab" aria-controls="pills-insurance" aria-selected="false">
                   Insurance
                 </a>
@@ -27,7 +27,7 @@
                   Mooring
                 </a>
               </li>
-              <li v-if="showPaymentTab" class="nav-item" id="li-payment">
+              <li v-show="showPaymentTab" class="nav-item" id="li-payment">
                 <a class="nav-link disabled" id="pills-payment-tab" data-toggle="pill" href="" role="tab" aria-controls="pills-payment" aria-selected="false">
                   Payment
                 </a>
@@ -41,9 +41,9 @@
             <div class="tab-content" id="pills-tabContent">
               <div class="tab-pane fade" id="pills-applicant" role="tabpanel" aria-labelledby="pills-applicant-tab">
                   <div v-if="is_external">
-                    <Profile 
-                    :isApplication="true" 
-                    v-if="applicantType == 'SUB'" 
+                    <Profile
+                    :isApplication="true"
+                    v-if="applicantType == 'SUB'"
                     ref="profile"
                     @profile-fetched="populateProfile"
                     :showElectoralRoll="showElectoralRoll"
@@ -52,9 +52,9 @@
                     />
                   </div>
                   <div v-else>
-                    <Applicant 
-                        :email_user="proposal.submitter" 
-                        :applicantType="proposal.applicant_type" 
+                    <Applicant
+                        :email_user="proposal.submitter"
+                        :applicantType="proposal.applicant_type"
                         id="proposalStartApplicant"
                         :readonly="readonly"
                     />
@@ -62,19 +62,19 @@
               </div>
               <div class="tab-pane fade" id="pills-vessels" role="tabpanel" aria-labelledby="pills-vessels-tab">
                   <div v-if="proposal">
-                      <CurrentVessels 
+                      <CurrentVessels
                           :proposal=proposal
                           :readonly=readonly
                           :is_internal=is_internal
                           @resetCurrentVessel=resetCurrentVessel
                           />
                   </div>
-                  <Vessels 
-                  :proposal="proposal" 
-                  :profile="profileVar" 
+                  <Vessels
+                  :proposal="proposal"
+                  :profile="profileVar"
                   :id="'proposalStartVessels' + uuid"
                   :key="'proposalStartVessels' + uuid"
-                  :keep_current_vessel=keep_current_vessel
+                  :keep_current_vessel=keepCurrentVessel
                   ref="vessels"
                   :readonly="readonly"
                   :is_internal="is_internal"
@@ -84,15 +84,15 @@
               </div>
               <div class="tab-pane fade" id="pills-insurance" role="tabpanel" aria-labelledby="pills-insurance-tab">
                   <Insurance
-                  :proposal="proposal" 
-                  id="insurance" 
+                  :proposal="proposal"
+                  id="insurance"
                   ref="insurance"
                   :readonly="readonly"
                   />
               </div>
               <div class="tab-pane fade" id="pills-mooring" role="tabpanel" aria-labelledby="pills-mooring-tab">
                   <div v-if="proposal">
-                      <CurrentMooring 
+                      <CurrentMooring
                           :proposal=proposal
                           :readonly=readonly
                           :is_internal=is_internal
@@ -100,11 +100,11 @@
                           />
                   </div>
                   <MooringAuthorisation
-                  :proposal="proposal" 
-                  id="mooring_authorisation" 
+                  :proposal="proposal"
+                  id="mooring_authorisation"
                   :id="'mooringAuthorisation' + mooringAuthorisationUuid"
                   :key="'mooringAuthorisation' + mooringAuthorisationUuid"
-                  :change_mooring=change_mooring
+                  :changeMooring="changeMooring"
                   :newAua="newAua"
                   ref="mooring_authorisation"
                   :readonly="readonly"
@@ -188,15 +188,17 @@
                 profile: {},
                 uuid: 0,
                 mooringAuthorisationUuid: 0,
-                keep_current_vessel: true,
-                change_mooring: false,
+                keepCurrentVessel: true,
+                changeMooring: false,
                 showPaymentTab: false,
+                showInsuranceTab: true,
+                higherVesselCategory: false,
             }
         },
         watch: {
-            change_mooring: {
+            changeMooring: {
                 handler: async function() {
-                    await this.$emit("changeMooring", this.change_mooring);
+                    await this.$emit("changeMooring", this.changeMooring);
                 },
             },
         },
@@ -235,6 +237,7 @@
                 }
                 return newApp;
             },
+            /*
             showInsuranceTab: function(){
                 let show=true;
                 if(this.proposal && this.proposal.proposal_type && this.proposal.proposal_type.code !=='new' && this.keep_current_vessel)
@@ -244,11 +247,13 @@
                 return show;
 
             },
+            */
         },
         methods:{
             vesselChanged: async function(vesselChanged) {
                 await this.$emit("vesselChanged", vesselChanged);
             },
+            /*
             updateVesselLength: function(length) {
                 let higherCategory = false;
                 if (this.is_external && this.proposal) {
@@ -256,7 +261,7 @@
                         // new application
                         //higherCategory = true;
                         //pass
-                    } else if (this.proposal.max_vessel_length_with_no_payment && 
+                    } else if (this.proposal.max_vessel_length_with_no_payment &&
                         this.proposal.max_vessel_length_with_no_payment <= length) {
                         // vessel length is in higher category
                         higherCategory = true;
@@ -268,15 +273,112 @@
                     this.$emit("updateSubmitText", "Pay / Submit");
                 }
             },
-
+            */
+            updateVesselLength: function(length) {
+                if (this.is_external && this.proposal) {
+                    if (this.proposal.max_vessel_length_with_no_payment &&
+                        this.proposal.max_vessel_length_with_no_payment <= length) {
+                        // vessel length is in higher category
+                        this.higherVesselCategory = true;
+                    } else {
+                        this.higherVesselCategory = false;
+                    }
+                }
+                this.updateAmendmentRenewalProperties();
+            },
             resetCurrentVessel: function(keep) {
-                this.keep_current_vessel = keep;
+                this.keepCurrentVessel = keep;
                 this.uuid++
+                this.updateAmendmentRenewalProperties();
             },
             resetCurrentMooring: function(keep) {
-                this.change_mooring = keep;
+                console.log('resetCurrentMooring() in form_aua.vue')
+                this.changeMooring = keep;
                 this.mooringAuthorisationUuid++
+                this.updateAmendmentRenewalProperties();
             },
+            updateAmendmentRenewalProperties: function() {
+                console.log('updateAmendmentRenewalProperties in form_aua.vue')
+                if (this.proposal && this.proposal.proposal_type.code === 'amendment') {
+                    this.$nextTick(() => {
+                        if (!this.keepCurrentVessel) {
+                            this.showPaymentTab = false;
+                            this.showInsuranceTab = true;
+                            this.$emit("updateSubmitText", "Submit");
+                        } else {
+                            this.showPaymentTab = false;
+                            this.showInsuranceTab = false;
+                            this.$emit("updateSubmitText", "Submit");
+                        }
+                    });
+                } else if (this.proposal && this.proposal.proposal_type.code === 'renewal') {
+                    this.$nextTick(() => {
+                        if (this.keepCurrentVessel && !this.higherVesselCategory && !this.changeMooring) {
+                            this.showPaymentTab = true;
+                            this.showInsuranceTab = false;
+                            this.$emit("updateSubmitText", "Pay / Submit");
+                            this.$emit("updateAutoRenew", true);
+                        } else if (!this.keepCurrentVessel) {
+                            this.showPaymentTab = false;
+                            this.showInsuranceTab = true;
+                            this.$emit("updateSubmitText", "Submit");
+                            this.$emit("updateAutoRenew", false);
+                        } else {
+                            this.showPaymentTab = false;
+                            this.showInsuranceTab = false;
+                            this.$emit("updateSubmitText", "Submit");
+                            this.$emit("updateAutoRenew", false);
+                        }
+                    });
+                }
+            },
+
+            /*
+            updateAmendmentRenewalProperties: function() {
+                console.log('updateAmendmentRenewalProperties in form_aua.vue')
+                if (this.proposal && ['renewal', 'amendment'].includes(this.proposal.proposal_type.code)) {
+                    this.$nextTick(() => {
+                        if (this.keepCurrentVessel && !this.higherVesselCategory && !this.changeMooring) {
+                            this.showPaymentTab = true;
+                            this.showInsuranceTab = false;
+                            this.$emit("updateSubmitText", "Pay / Submit");
+                            this.$emit("updateAutoRenew", true);
+                            console.log("here");
+                        } else if (this.keepCurrentVessel && this.higherVesselCategory && !this.changeMooring) {
+                            this.showPaymentTab = false;
+                            this.showInsuranceTab = false;
+                            this.$emit("updateSubmitText", "Submit");
+                            this.$emit("updateAutoRenew", false);
+                            console.log("here");
+                        } else if (!this.keepCurrentVessel && !this.changeMooring) {
+                            this.showPaymentTab = false;
+                            this.showInsuranceTab = true;
+                            this.$emit("updateSubmitText", "Submit");
+                            this.$emit("updateAutoRenew", false);
+                            console.log("here");
+                        } else if (!this.keepCurrentVessel && !this.higherVesselCategory && this.changeMooring) {
+                            this.showPaymentTab = false;
+                            this.showInsuranceTab = false;
+                            this.$emit("updateSubmitText", "Submit");
+                            this.$emit("updateAutoRenew", false);
+                            console.log("here");
+                        } else if (this.keepCurrentVessel && this.changeMooring) {
+                            this.showPaymentTab = false;
+                            this.showInsuranceTab = false;
+                            this.$emit("updateSubmitText", "Submit");
+                            this.$emit("updateAutoRenew", false);
+                            console.log("here");
+                        } else if (this.higherVesselCategory && this.changeMooring) {
+                            this.showPaymentTab = false;
+                            this.showInsuranceTab = false;
+                            this.$emit("updateSubmitText", "Submit");
+                            this.$emit("updateAutoRenew", false);
+                            console.log("here");
+                        }
+                    });
+                }
+            },
+            */
             populateProfile: function(profile) {
                 this.profile = Object.assign({}, profile);
             },
@@ -286,22 +388,24 @@
                 /* set Applicant tab Active */
                 $('#pills-tab a[href="#pills-applicant"]').tab('show');
 
+                /*
                 if (vm.proposal.fee_paid) {
-                    /* Online Training tab */
                     $('#pills-online-training-tab').attr('style', 'background-color:#E5E8E8 !important; color: #99A3A4;');
                     $('#li-training').attr('class', 'nav-item disabled');
                     $('#pills-online-training-tab').attr("href", "")
                 }
-
                 if (!vm.proposal.training_completed) {
-                    /* Payment tab  (this is enabled after online_training is completed - in online_training.vue)*/
                     $('#pills-payment-tab').attr('style', 'background-color:#E5E8E8 !important; color: #99A3A4;');
                     $('#li-payment').attr('class', 'nav-item disabled');
                 }
+                */
 
                 /* Confirmation tab - Always Disabled */
                 $('#pills-confirm-tab').attr('style', 'background-color:#E5E8E8 !important; color: #99A3A4;');
                 $('#li-confirm').attr('class', 'nav-item disabled');
+                /* Payment tab - Always Disabled */
+                $('#pills-payment-tab').attr('style', 'background-color:#E5E8E8 !important; color: #99A3A4;');
+                $('#li-payment').attr('class', 'nav-item disabled');
             },
             /*
             eventListener: function(){
@@ -320,12 +424,13 @@
             let vm = this;
             vm.set_tabs();
             vm.form = document.forms.new_proposal;
+            this.updateAmendmentRenewalProperties();
             //vm.eventListener();
             //window.addEventListener('beforeunload', vm.leaving);
             //indow.addEventListener('onblur', vm.leaving);
 
         }
- 
+
     }
 </script>
 

@@ -310,8 +310,6 @@ export default {
                         searchable: false,
                         visible: false,
                         'render': function(row, type, full){
-                            console.log('---full---')
-                            console.log(full)
                             return full.id
                         }
                     }
@@ -438,7 +436,8 @@ export default {
                                 if(full.can_action || vm.debug){
                                     if(full.amend_or_renew === 'amend' || vm.debug){
                                        links +=  `<a href='#${full.id}' data-amend-approval='${full.current_proposal_id}'>Amend</a><br/>`;
-                                    } else if(full.amend_or_renew === 'renew' || vm.debug){
+                                    } 
+                                    if(full.amend_or_renew === 'renew' || vm.debug){
                                         links +=  `<a href='#${full.id}' data-renew-approval='${full.current_proposal_id}'>Renew</a><br/>`;
                                     }
                                     links +=  `<a href='#${full.id}' data-surrender-approval='${full.id}'>Surrender</a><br/>`;
@@ -610,9 +609,20 @@ export default {
                         searchable: true,
                         visible: true,
                         'render': function(row, type, full){
-                            //return full.vessel_draft;
-                            //return '';
-                            return `<div><a href='${full.licence_document}' target='_blank'><i style='color:red;' class='fa fa-file-pdf-o'></i></a></div>`;
+                            let approval_letter_name = ''
+                            if (full.approval_type_dict.code === 'aup'){
+                                approval_letter_name = 'Authrised User Permit'
+                            } else if (full.approval_type_dict.code === 'aap'){
+                                approval_letter_name = 'Annual Admission Permit'
+                            } else if (full.approval_type_dict.code === 'ml'){
+                                approval_letter_name = 'Mooring Licence'
+                            }
+                            let ret_elems = `<div><a href='${full.licence_document}' target='_blank'><i style='color:red;' class='fa fa-file-pdf-o'></i> ${approval_letter_name}</a></div>`;
+                            if (full.authorised_user_summary_document){
+                                ret_elems += `<div><a href='${full.authorised_user_summary_document}' target='_blank'><i style='color:red;' class='fa fa-file-pdf-o'></i> List of Authorised Users</a></div>`;
+                            }
+
+                            return ret_elems
                         }
                     }
         },

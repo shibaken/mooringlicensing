@@ -242,9 +242,7 @@ class StickerReplacementFeeSuccessView(TemplateView):
     def get(self, request, *args, **kwargs):
 
         try:
-            print('1')
             sticker_action_fee = get_session_sticker_action_invoice(request.session)  # This raises an exception when accessed 2nd time?
-            print('2')
             sticker_action_details = sticker_action_fee.sticker_action_details
 
             if self.request.user.is_authenticated():
@@ -260,7 +258,6 @@ class StickerReplacementFeeSuccessView(TemplateView):
             sticker_action_fee.save()
 
             if sticker_action_fee.payment_type == StickerActionFee.PAYMENT_TYPE_TEMPORARY:
-                print('3')
                 try:
                     inv = Invoice.objects.get(reference=invoice.reference)
                     order = Order.objects.get(number=inv.order_number)
@@ -324,6 +321,7 @@ class ApplicationFeeView(TemplateView):
     def post(self, request, *args, **kwargs):
         proposal = self.get_object()
         application_fee = ApplicationFee.objects.create(proposal=proposal, created_by=request.user, payment_type=ApplicationFee.PAYMENT_TYPE_TEMPORARY)
+        logger.info('ApplicationFee.id: {} has been created for the Proposal: {}'.format(application_fee.id, proposal))
 
         try:
             with transaction.atomic():
@@ -419,6 +417,7 @@ class DcvAdmissionFeeSuccessView(TemplateView):
                     'dcv_admission': dcv_admission,
                     'submitter': submitter,
                     'fee_invoice': dcv_admission_fee,
+                    'invoice': invoice,
                 }
                 return render(request, self.template_name, context)
 
@@ -431,10 +430,12 @@ class DcvAdmissionFeeSuccessView(TemplateView):
             else:
                 return redirect('home')
 
+        invoice = Invoice.objects.get(reference=dcv_admission_fee.invoice_reference)
         context = {
             'dcv_admission': dcv_admission,
             'submitter': submitter,
             'fee_invoice': dcv_admission_fee,
+            'invoice': invoice,
         }
         return render(request, self.template_name, context)
 
@@ -523,7 +524,7 @@ class DcvPermitFeeSuccessView(TemplateView):
                 return render(request, self.template_name, context)
 
         except Exception as e:
-            print('in ApplicationFeeSuccessView.get() Exception')
+            print('in DcvPermitFeeSuccessView.get() Exception')
             print(e)
             if (self.LAST_DCV_PERMIT_FEE_ID in request.session) and DcvPermitFee.objects.filter(id=request.session[self.LAST_DCV_PERMIT_FEE_ID]).exists():
                 dcv_permit_fee = DcvPermitFee.objects.get(id=request.session[self.LAST_DCV_PERMIT_FEE_ID])
@@ -574,13 +575,18 @@ class ApplicationFeeSuccessView(TemplateView):
             recipient = proposal.applicant_email
             submitter = proposal.submitter
 
-            if self.request.user.is_authenticated():
-                basket = Basket.objects.filter(status='Submitted', owner=request.user).order_by('-id')[:1]
-            else:
-                basket = Basket.objects.filter(status='Submitted', owner=proposal.submitter).order_by('-id')[:1]
+            try:
+                # For the existing invoice, invoice can be retrieved from the application_fee object
+                invoice = Invoice.objects.get(reference=application_fee.invoice_reference)
+            except Exception as e:
+                # For the non-existing invoice, invoice can be retrieved from the basket
+                if self.request.user.is_authenticated():
+                    basket = Basket.objects.filter(status='Submitted', owner=request.user).order_by('-id')[:1]
+                else:
+                    basket = Basket.objects.filter(status='Submitted', owner=proposal.submitter).order_by('-id')[:1]
+                order = Order.objects.get(basket=basket[0])
+                invoice = Invoice.objects.get(order_number=order.number)
 
-            order = Order.objects.get(basket=basket[0])
-            invoice = Invoice.objects.get(order_number=order.number)
             invoice_ref = invoice.reference
 
             # Update the application_fee object
@@ -663,10 +669,13 @@ class ApplicationFeeSuccessView(TemplateView):
                 request.session[self.LAST_APPLICATION_FEE_ID] = application_fee.id
                 delete_session_application_invoice(request.session)
 
+                wla_or_aaa = True if proposal.application_type.code in [WaitingListApplication.code, AnnualAdmissionApplication.code,] else False
                 context = {
                     'proposal': proposal,
                     'submitter': submitter,
                     'fee_invoice': application_fee,
+                    'is_wla_or_aaa': wla_or_aaa,
+                    'invoice': invoice,
                 }
                 return render(request, self.template_name, context)
 
@@ -692,10 +701,14 @@ class ApplicationFeeSuccessView(TemplateView):
             logger.error(msg)
             raise Exception(msg)
 
+        wla_or_aaa = True if proposal.application_type.code in [WaitingListApplication.code, AnnualAdmissionApplication.code,] else False
+        invoice = Invoice.objects.get(reference=application_fee.invoice_reference)
         context = {
             'proposal': proposal,
             'submitter': submitter,
             'fee_invoice': application_fee,
+            'is_wla_or_aaa': wla_or_aaa,
+            'invoice': invoice,
         }
         return render(request, self.template_name, context)
 
