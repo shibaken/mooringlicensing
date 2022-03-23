@@ -2391,9 +2391,9 @@ class AuthorisedUserApplication(Proposal):
             self.log_user_action(ProposalUserAction.ACTION_APPROVE_APPLICATION.format(self.id))
 
         # Write approval history
-        if self.proposal_type == ProposalType.objects.filter(code=PROPOSAL_TYPE_RENEWAL):
+        if self.proposal_type == ProposalType.objects.get(code=PROPOSAL_TYPE_RENEWAL):
             approval.write_approval_history('renewal application {}'.format(self.lodgement_number))
-        elif self.proposal_type == ProposalType.objects.filter(code=PROPOSAL_TYPE_AMENDMENT):
+        elif self.proposal_type == ProposalType.objects.get(code=PROPOSAL_TYPE_AMENDMENT):
             approval.write_approval_history('amendment application {}'.format(self.lodgement_number))
         elif self.approval and self.approval.reissued:
             approval.write_approval_history('reissue via application {}'.format(self.lodgement_number))
@@ -2762,9 +2762,9 @@ class MooringLicenceApplication(Proposal):
                 self.log_user_action(ProposalUserAction.ACTION_APPROVE_APPLICATION.format(self.id))
 
             # write approval history
-            if self.proposal_type == ProposalType.objects.filter(code=PROPOSAL_TYPE_RENEWAL):
+            if self.proposal_type == ProposalType.objects.get(code=PROPOSAL_TYPE_RENEWAL):
                 approval.write_approval_history('renewal application {}'.format(self.lodgement_number))
-            elif self.proposal_type == ProposalType.objects.filter(code=PROPOSAL_TYPE_AMENDMENT):
+            elif self.proposal_type == ProposalType.objects.get(code=PROPOSAL_TYPE_AMENDMENT):
                 approval.write_approval_history('amendment application {}'.format(self.lodgement_number))
             elif self.approval and self.approval.reissued:
                 approval.write_approval_history('reissue via application {}'.format(self.lodgement_number))
@@ -2921,9 +2921,11 @@ class Mooring(RevisionedMixin):
                     status = 'Licence Application'
         return status if status else 'Unlicensed'
 
-    def suitable_vessel(self, vessel_details):
+    def suitable_vessel(self, vessel_details=None):
         suitable = True
-        if vessel_details.vessel_applicable_length > self.vessel_size_limit or vessel_details.vessel_draft > self.vessel_draft_limit:
+        if not vessel_details:
+            suitable = ''
+        elif vessel_details.vessel_applicable_length > self.vessel_size_limit or vessel_details.vessel_draft > self.vessel_draft_limit:
             suitable = False
         return suitable
 
