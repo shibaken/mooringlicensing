@@ -5,26 +5,48 @@
 MANAGE_PY_FILE_NAME="manage_ml.py"
 FILE="pyproject.toml"
 
+
+# Determine if the 'poetry' is used for virtual environment
 if [[ -f "$FILE" ]]; then
     # pyproject.toml file exists.
-    POETRY_ENV="true"
-else
-    # pyproject.toml file doesn't exist.
-    POETRY_ENV="false"
-fi
-echo $POETRY_ENV
-
-if [[ $POETRY_ENV == "true" ]]; then
-    # Poetry environment
+    echo "poetry env"
     RUN_PYTHON="poetry run python"
+    DJANGO_FOLDER="venv/lib/python3.8/site-packages/django/"  # TODO: correct folder path
 else
-    # No poetry
+    echo "no env"
+    # pyproject.toml file doesn't exist.
     RUN_PYTHON="python"
+    DJANGO_FOLDER="venv/lib/python3.8/site-packages/django/"
 fi
-echo $RUN_PYTHON
-
-$RUN_PYTHON $MANAGE_PY_FILE_NAME migrate auth
-#$RUN_PYTHON $MANAGE_PY_FILE_NAME migrate auth &&
-#$RUN_PYTHON $MANAGE_PY_FILE_NAME migrate ledger_api_client
 
 
+# Apply patches
+patch ./mooringlicensing/migrations/0001_initial.py < patch.mooringlicensing.0001_initial.py.patch &&
+patch ${DJANGO_FOLDER}contrib/admin/migrations/0001_initial.py < patch.admin.0001_initial.py.patch &&
+status=$?
+if [ $status -ne 0  ]; then
+    echo "Migration patch filed: $status"
+    exit $status
+fi
+
+
+# Migrations
+$RUN_PYTHON $MANAGE_PY_FILE_NAME migrate auth &&
+$RUN_PYTHON $MANAGE_PY_FILE_NAME migrate ledger_api_client &&
+$RUN_PYTHON $MANAGE_PY_FILE_NAME migrate admin
+$RUN_PYTHON $MANAGE_PY_FILE_NAME migrate django_cron &&
+$RUN_PYTHON $MANAGE_PY_FILE_NAME migrate sites 0001_initial &&
+$RUN_PYTHON $MANAGE_PY_FILE_NAME migrate sites 0002_alter_domain_unique &&
+$RUN_PYTHON $MANAGE_PY_FILE_NAME migrate sessions  # &&
+#$RUN_PYTHON $MANAGE_PY_FILE_NAME migrate &&
+#$RUN_PYTHON $MANAGE_PY_FILE_NAME dbshell -- -c 'ALTER TABLE django_admin_log RENAME COLUMN "user" TO "user_id";'
+
+
+# Revert patches
+patch ${DJANGO_FOLDER}contrib/admin/migrations/0001_initial.py < patch.admin.0001_initial.py.patch_revert &&
+patch ./mooringlicensing/migrations/0001_initial.py < patch.mooringlicensing.0001_initial.py.revert &&
+status=$?
+if [ $status -ne 0  ]; then
+    echo "Migration patch filed: $status"
+    exit $status
+fi
