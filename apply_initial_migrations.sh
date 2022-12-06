@@ -21,8 +21,7 @@ fi
 
 
 # Apply patches
-#patch ./mooringlicensing/migrations/0001_initial.py < patch.mooringlicensing.0001_initial.py.patch &&
-patch ./mooringlicensing/migrations/0001_initial.py < 0001_initial.py.patch &&
+patch ./mooringlicensing/migrations/0001_initial.py < patch.mooringlicensing.0001_initial.py.patch &&
 patch ${DJANGO_FOLDER}contrib/admin/migrations/0001_initial.py < patch.admin.0001_initial.py.patch &&
 status=$?
 if [ $status -ne 0  ]; then
