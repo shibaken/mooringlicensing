@@ -3859,7 +3859,8 @@ class AmendmentRequest(ProposalRequest):
 
 class ProposalDeclinedDetails(models.Model):
     proposal = models.OneToOneField(Proposal, null=True, on_delete=models.SET_NULL)
-    officer = models.ForeignKey(EmailUser, null=True, on_delete=models.SET_NULL)
+    # officer = models.ForeignKey(EmailUser, null=True, on_delete=models.SET_NULL)
+    officer = models.IntegerField()
     reason = models.TextField(blank=True)
     cc_email = models.TextField(null=True)
 
