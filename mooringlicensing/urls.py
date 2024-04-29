@@ -200,26 +200,29 @@ urlpatterns = [
     url(r'^api/check_oracle_code$', payments_api.CheckOracleCodeView.as_view(), name='check_oracle_code'),
     url(r'^api/refund_oracle$', payments_api.RefundOracleView.as_view(), name='refund_oracle'),
 
-    url(r'^' + PRIVATE_MEDIA_DIR_NAME + '/proposal/(?P<proposal_id>\d+)/vessel_registration_documents/(?P<filename>.+)$', proposal_views.VesselRegistrationDocumentView.as_view(), name='serve_vessel_registration_documents'),
-    url(r'^' + PRIVATE_MEDIA_DIR_NAME + '/proposal/(?P<proposal_id>\d+)/hull_identification_number_documents/(?P<filename>.+)$', proposal_views.HullIdentificationNumberDocumentView.as_view(), name='serve_hull_identification_number_documents'),
-    url(r'^' + PRIVATE_MEDIA_DIR_NAME + '/proposal/(?P<proposal_id>\d+)/electoral_roll_documents/(?P<filename>.+)$', proposal_views.ElectoralRollDocumentView.as_view(), name='serve_electoral_roll_documents'),
-    url(r'^' + PRIVATE_MEDIA_DIR_NAME + '/proposal/(?P<proposal_id>\d+)/insurance_certificate_documents/(?P<filename>.+)$', proposal_views.InsuranceCertificateDocumentView.as_view(), name='serve_insurance_certificate_documents'),
-    url(r'^' + PRIVATE_MEDIA_DIR_NAME + '/proposal/(?P<proposal_id>\d+)/written_proof_documents/(?P<filename>.+)$', proposal_views.WrittenProofDocumentView.as_view(), name='serve_written_proof_documents'),
-    url(r'^' + PRIVATE_MEDIA_DIR_NAME + '/proposal/(?P<proposal_id>\d+)/signed_licence_agreement_documents/(?P<filename>.+)$', proposal_views.SignedLicenceAgreementDocumentView.as_view(), name='serve_signed_licence_agreement_documents'),
-    url(r'^' + PRIVATE_MEDIA_DIR_NAME + '/proposal/(?P<proposal_id>\d+)/proof_of_identity_documents/(?P<filename>.+)$', proposal_views.ProofOfIdentityDocumentView.as_view(), name='serve_proof_of_identity_documents'),
-    url(r'^' + PRIVATE_MEDIA_DIR_NAME + '/approval/(?P<approval_id>\d+)/waiting_list_offer_documents/(?P<filename>.+)$', proposal_views.WaitingListOfferDocumentView.as_view(), name='serve_waiting_list_offer_documents'),
+    #TODO: I have opted to use this single view function as it simpler to run auth and maintain
+    url(r'^private-media/', views.getPrivateFile, name='view_private_file'),
 
-    url(r'^' + PRIVATE_MEDIA_DIR_NAME + '/proposal/(?P<proposal_id>\d+)/approval_documents/(?P<filename>.+)$', proposal_views.ApprovalDocumentView.as_view(), name='serve_approval_documents'),
-    url(r'^' + PRIVATE_MEDIA_DIR_NAME + '/proposal/(?P<proposal_id>\d+)/authorised_user_summary_documents/(?P<filename>.+)$', proposal_views.AuthorisedUserSummaryDocumentView.as_view(), name='serve_authorised_user_summary_documents'),
-    url(r'^' + PRIVATE_MEDIA_DIR_NAME + '/proposal/(?P<proposal_id>\d+)/renewal_documents/(?P<filename>.+)$', proposal_views.RenewalDocumentView.as_view(), name='serve_renewal_documents'),
-    url(r'^' + PRIVATE_MEDIA_DIR_NAME + '/proposal/(?P<proposal_id>\d+)/approvals/communications/(?P<filename>.+)$', proposal_views.ApprovalLogDocumentView.as_view(), name='serve_approval_log_documents'),
-    url(r'^' + PRIVATE_MEDIA_DIR_NAME + '/dcv_admission/(?P<dcv_admission_id>\d+)/dcv_admission_documents/(?P<filename>.+)$', proposal_views.DcvAdmissionDocumentView.as_view(), name='serve_dcv_admission_documents'),
-    url(r'^' + PRIVATE_MEDIA_DIR_NAME + '/dcv_permit/(?P<dcv_permit_id>\d+)/dcv_permit_documents/(?P<filename>.+)$', proposal_views.DcvPermitDocumentView.as_view(), name='serve_dcv_permit_documents'),
+    #url(r'^' + PRIVATE_MEDIA_DIR_NAME + '/proposal/(?P<proposal_id>\d+)/vessel_registration_documents/(?P<filename>.+)$', proposal_views.VesselRegistrationDocumentView.as_view(), name='serve_vessel_registration_documents'),
+    #url(r'^' + PRIVATE_MEDIA_DIR_NAME + '/proposal/(?P<proposal_id>\d+)/hull_identification_number_documents/(?P<filename>.+)$', proposal_views.HullIdentificationNumberDocumentView.as_view(), name='serve_hull_identification_number_documents'),
+    #url(r'^' + PRIVATE_MEDIA_DIR_NAME + '/proposal/(?P<proposal_id>\d+)/electoral_roll_documents/(?P<filename>.+)$', proposal_views.ElectoralRollDocumentView.as_view(), name='serve_electoral_roll_documents'),
+    #url(r'^' + PRIVATE_MEDIA_DIR_NAME + '/proposal/(?P<proposal_id>\d+)/insurance_certificate_documents/(?P<filename>.+)$', proposal_views.InsuranceCertificateDocumentView.as_view(), name='serve_insurance_certificate_documents'),
+    #url(r'^' + PRIVATE_MEDIA_DIR_NAME + '/proposal/(?P<proposal_id>\d+)/written_proof_documents/(?P<filename>.+)$', proposal_views.WrittenProofDocumentView.as_view(), name='serve_written_proof_documents'),
+    #url(r'^' + PRIVATE_MEDIA_DIR_NAME + '/proposal/(?P<proposal_id>\d+)/signed_licence_agreement_documents/(?P<filename>.+)$', proposal_views.SignedLicenceAgreementDocumentView.as_view(), name='serve_signed_licence_agreement_documents'),
+    #url(r'^' + PRIVATE_MEDIA_DIR_NAME + '/proposal/(?P<proposal_id>\d+)/proof_of_identity_documents/(?P<filename>.+)$', proposal_views.ProofOfIdentityDocumentView.as_view(), name='serve_proof_of_identity_documents'),
+    #url(r'^' + PRIVATE_MEDIA_DIR_NAME + '/approval/(?P<approval_id>\d+)/waiting_list_offer_documents/(?P<filename>.+)$', proposal_views.WaitingListOfferDocumentView.as_view(), name='serve_waiting_list_offer_documents'),
+#
+    #url(r'^' + PRIVATE_MEDIA_DIR_NAME + '/proposal/(?P<proposal_id>\d+)/approval_documents/(?P<filename>.+)$', proposal_views.ApprovalDocumentView.as_view(), name='serve_approval_documents'),
+    #url(r'^' + PRIVATE_MEDIA_DIR_NAME + '/proposal/(?P<proposal_id>\d+)/authorised_user_summary_documents/(?P<filename>.+)$', proposal_views.AuthorisedUserSummaryDocumentView.as_view(), name='serve_authorised_user_summary_documents'),
+    #url(r'^' + PRIVATE_MEDIA_DIR_NAME + '/proposal/(?P<proposal_id>\d+)/renewal_documents/(?P<filename>.+)$', proposal_views.RenewalDocumentView.as_view(), name='serve_renewal_documents'),
+    #url(r'^' + PRIVATE_MEDIA_DIR_NAME + '/proposal/(?P<proposal_id>\d+)/approvals/communications/(?P<filename>.+)$', proposal_views.ApprovalLogDocumentView.as_view(), name='serve_approval_log_documents'),
+    #url(r'^' + PRIVATE_MEDIA_DIR_NAME + '/dcv_admission/(?P<dcv_admission_id>\d+)/dcv_admission_documents/(?P<filename>.+)$', proposal_views.DcvAdmissionDocumentView.as_view(), name='serve_dcv_admission_documents'),
+    #url(r'^' + PRIVATE_MEDIA_DIR_NAME + '/dcv_permit/(?P<dcv_permit_id>\d+)/dcv_permit_documents/(?P<filename>.+)$', proposal_views.DcvPermitDocumentView.as_view(), name='serve_dcv_permit_documents'),
 
     # Intercept the request to update the account details before reaching the ledger_api_client
     url(r'^ledger-ui/api/update-account-details/(?P<user_id>[0-9]+)/', update_personal_details, name='update-account-details'),
 
-] + ledger_patterns + media_serv_patterns
+] + ledger_patterns #+ media_serv_patterns
 
 
 

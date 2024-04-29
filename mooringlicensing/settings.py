@@ -480,6 +480,7 @@ LEDGER_UI_ACCOUNTS_MANAGEMENT = [
     {'dob' : {'options' : {'view': True, 'edit': True}}},
     {'postal_same_as_residential' : {'options' : {'view': True, 'edit': True}}},
 ]
+FILE_UPLOAD_PERMISSIONS = None
 MOORING_LICENSING_EXTERNAL_URL = env('MOORING_LICENSING_EXTERNAL_URL', 'External url not configured')
 PRIVATE_MEDIA_DIR_NAME = env('PRIVATE_MEDIA_DIR_NAME', 'private-media')
 PRIVATE_MEDIA_STORAGE_LOCATION = os.path.join(BASE_DIR, PRIVATE_MEDIA_DIR_NAME)

@@ -12,6 +12,7 @@ from mooringlicensing.components.main.models import (
     UserAction,
     Document, RevisionedMixin
 )
+from django.core.files.storage import FileSystemStorage
 from mooringlicensing.components.proposals.models import ProposalRequirement, AmendmentReason
 from mooringlicensing.components.compliances.email import (
                         send_compliance_accept_email_notification,
@@ -24,6 +25,10 @@ from mooringlicensing.components.compliances.email import (
                         send_internal_due_email_notification
                         )
 # from ledger.payments.invoice.models import Invoice
+private_storage = FileSystemStorage(  # We want to store files in secure place (outside of the media folder)
+    location=settings.PRIVATE_MEDIA_STORAGE_LOCATION,
+    base_url=settings.PRIVATE_MEDIA_BASE_URL,
+)
 
 import logging
 
@@ -163,9 +168,10 @@ class Compliance(RevisionedMixin):
 
                     if request.FILES:
                         for f in request.FILES:
-                            document = self.documents.create(name=str(request.FILES[f]))
-                            document._file = request.FILES[f]
-                            document.save()
+                            document = self.documents.create(
+                                name=str(request.FILES[f]),
+                                _file = request.FILES[f]
+                            )
                     if self.amendment_requests:
                         qs = self.amendment_requests.filter(status = "requested")
                         if (qs):
@@ -250,7 +256,7 @@ def update_proposal_complaince_filename(instance, filename):
 
 class ComplianceDocument(Document):
     compliance = models.ForeignKey('Compliance', related_name='documents', on_delete=models.CASCADE)
-    _file = models.FileField(upload_to=update_proposal_complaince_filename, max_length=512)
+    _file = models.FileField(storage=private_storage, upload_to=update_proposal_complaince_filename, max_length=512)
     can_delete = models.BooleanField(default=True) # after initial submit prevent document from being deleted
 
     def delete(self):
@@ -307,7 +313,7 @@ def update_compliance_comms_log_filename(instance, filename):
 
 class ComplianceLogDocument(Document):
     log_entry = models.ForeignKey('ComplianceLogEntry', related_name='documents', on_delete=models.CASCADE)
-    _file = models.FileField(upload_to=update_compliance_comms_log_filename, max_length=512)
+    _file = models.FileField(storage=private_storage, upload_to=update_compliance_comms_log_filename, max_length=512)
 
     class Meta:
         app_label = 'mooringlicensing'

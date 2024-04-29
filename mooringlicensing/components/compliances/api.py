@@ -7,7 +7,8 @@ import traceback
 from rest_framework_datatables.filters import DatatablesFilterBackend
 from rest_framework_datatables.renderers import DatatablesRenderer
 # from wsgiref.util import FileWrapper
-from django.db.models import Q, Min
+from django.db.models import Q, Min, CharField, Value
+from django.db.models.functions import Concat
 from django.db import transaction
 # from django.http import HttpResponse
 # from django.core.files.base import ContentFile
@@ -47,6 +48,7 @@ from mooringlicensing.components.compliances.serializers import (
     ComplianceAmendmentRequestSerializer,
     CompAmendmentRequestDisplaySerializer, ListComplianceSerializer
 )
+from mooringlicensing.components.proposals.models import ProposalApplicant
 from mooringlicensing.components.organisations.models import Organisation
 from mooringlicensing.helpers import is_customer, is_internal
 from rest_framework_datatables.pagination import DatatablesPageNumberPagination
@@ -115,9 +117,7 @@ class ComplianceViewSet(viewsets.ModelViewSet):
                 if request.FILES:
                     # if num_adults is present instance.submit is executed after payment in das_payment/views.py
                     for f in request.FILES:
-                        document = instance.documents.create(name=str(request.FILES[f]))
-                        document._file = request.FILES[f]
-                        document.save()
+                        document = instance.documents.create(name=str(request.FILES[f]),_file = request.FILES[f])
             else:
                 instance.submit(request)
 
@@ -214,10 +214,10 @@ class ComplianceViewSet(viewsets.ModelViewSet):
             comms = serializer.save()
             # Save the files
             for f in request.FILES:
-                document = comms.documents.create()
-                document.name = str(request.FILES[f])
-                document._file = request.FILES[f]
-                document.save()
+                document = comms.documents.create(
+                    name = str(request.FILES[f]),
+                    _file = request.FILES[f]
+                )
             # End Save Documents
 
             return Response(serializer.data)
@@ -293,15 +293,22 @@ class ComplianceFilterBackend(DatatablesFilterBackend):
             queryset = queryset.order_by(*ordering)
 
         try:
-            queryset = super(ComplianceFilterBackend, self).filter_queryset(request, queryset, view)
+            super_queryset = super(ComplianceFilterBackend, self).filter_queryset(request, queryset, view)
 
             # Custom search 
-            search_term = request.GET.get('search[value]')  # This has a search term.
-            if search_term:
-                email_users = EmailUser.objects.filter(Q(first_name__icontains=search_term) | Q(last_name__icontains=search_term) | Q(email__icontains=search_term)).values_list('id', flat=True)
-                q_set = Compliance.objects.filter(approval__submitter__in=list(email_users))
+            search_text = request.GET.get('search[value]')  # This has a search term.
+            if search_text:
+                email_user_ids = list(EmailUser.objects.annotate(full_name=Concat('first_name',Value(" "),'last_name',output_field=CharField()))
+                .filter(
+                    Q(first_name__icontains=search_text) | Q(last_name__icontains=search_text) | Q(email__icontains=search_text) | Q(full_name__icontains=search_text)
+                ).values_list("id", flat=True))
+                proposal_applicant_proposals = list(ProposalApplicant.objects.annotate(full_name=Concat('first_name',Value(" "),'last_name',output_field=CharField()))
+                .filter(
+                    Q(first_name__icontains=search_text) | Q(last_name__icontains=search_text) | Q(email__icontains=search_text) | Q(full_name__icontains=search_text)
+                ).values_list("proposal_id", flat=True))
+                q_set = queryset.filter(Q(approval__current_proposal__id__in=proposal_applicant_proposals)|Q(approval__current_proposal__submitter__in=email_user_ids))
 
-                queryset = queryset.union(q_set)
+                queryset = super_queryset.union(q_set)
             return queryset
         except Exception as e:
             logger.error(f'ComplianceFilterBackend raises an error: [{e}].  Query may not work correctly.')

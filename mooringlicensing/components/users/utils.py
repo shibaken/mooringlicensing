@@ -2,11 +2,11 @@ import logging
 
 from django.conf import settings
 from django.core.files.base import ContentFile
-from django.core.files.storage import default_storage
+#from django.core.files.storage import default_storage
 from django.core.mail import EmailMultiAlternatives, EmailMessage
 from django.utils.encoding import smart_text
 
-from mooringlicensing.components.users.models import EmailUserLogEntry
+from mooringlicensing.components.users.models import EmailUserLogEntry, private_storage
 
 
 def _log_user_email(email_message, target_email_user, customer, sender=None, attachments=[]):
@@ -56,7 +56,7 @@ def _log_user_email(email_message, target_email_user, customer, sender=None, att
 
     for attachment in attachments:
         path_to_file = '{}/emailuser/{}/communications/{}'.format(settings.MEDIA_APP_DIR, target_email_user, attachment[0])
-        path = default_storage.save(path_to_file, ContentFile(attachment[1]))
+        path = private_storage.save(path_to_file, ContentFile(attachment[1]))
         email_entry.documents.get_or_create(_file=path_to_file, name=attachment[0])
 
     # return email_entry

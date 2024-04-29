@@ -116,7 +116,7 @@ def update_mooring_comms_log_filename(instance, filename):
 
 class ProposalDocument(Document):
     proposal = models.ForeignKey('Proposal',related_name='documents', on_delete=models.CASCADE)
-    _file = models.FileField(upload_to=update_proposal_doc_filename, max_length=512)
+    _file = models.FileField(storage=private_storage,upload_to=update_proposal_doc_filename, max_length=512)
     input_name = models.CharField(max_length=255,null=True,blank=True)
     can_delete = models.BooleanField(default=True) # after initial submit prevent document from being deleted
     can_hide= models.BooleanField(default=False) # after initial submit, document cannot be deleted but can be hidden
@@ -129,7 +129,7 @@ class ProposalDocument(Document):
 
 class RequirementDocument(Document):
     requirement = models.ForeignKey('ProposalRequirement',related_name='requirement_documents', on_delete=models.CASCADE)
-    _file = models.FileField(upload_to=update_requirement_doc_filename, max_length=512)
+    _file = models.FileField(storage=private_storage,upload_to=update_requirement_doc_filename, max_length=512)
     input_name = models.CharField(max_length=255,null=True,blank=True)
     can_delete = models.BooleanField(default=True) # after initial submit prevent document from being deleted
     visible = models.BooleanField(default=True) # to prevent deletion on file system, hidden and still be available in history
@@ -2431,6 +2431,10 @@ class ProposalApplicant(RevisionedMixin):
             return self.residential_postcode
         else:
             return self.postal_postcode
+        
+    def get_full_name(self):
+        full_name = '{} {}'.format(self.first_name, self.last_name)
+        return full_name
 
     def copy_self_to_proposal(self, target_proposal):
         proposal_applicant = ProposalApplicant.objects.create(
@@ -2521,7 +2525,7 @@ class StickerPrintedContact(models.Model):
 
 
 class StickerPrintingBatch(Document):
-    _file = models.FileField(upload_to=update_sticker_doc_filename, max_length=512)
+    _file = models.FileField(storage=private_storage,upload_to=update_sticker_doc_filename, max_length=512)
     emailed_datetime = models.DateTimeField(blank=True, null=True)  # Once emailed, this field has a value
 
     class Meta:
@@ -2543,7 +2547,7 @@ class StickerPrintingResponseEmail(models.Model):
 
 
 class StickerPrintingResponse(Document):
-    _file = models.FileField(upload_to=update_sticker_response_doc_filename, max_length=512)
+    _file = models.FileField(storage=private_storage,upload_to=update_sticker_response_doc_filename, max_length=512)
     sticker_printing_response_email = models.ForeignKey(StickerPrintingResponseEmail, blank=True, null=True, on_delete=models.SET_NULL)
     processed = models.BooleanField(default=False)  # Processed by a cron to update sticker details
     no_errors_when_process = models.NullBooleanField(default=None)
@@ -4076,7 +4080,7 @@ class MooringLicenceApplication(Proposal):
 
 class ProposalLogDocument(Document):
     log_entry = models.ForeignKey('ProposalLogEntry',related_name='documents', on_delete=models.CASCADE)
-    _file = models.FileField(upload_to=update_proposal_comms_log_filename, max_length=512)
+    _file = models.FileField(storage=private_storage,upload_to=update_proposal_comms_log_filename, max_length=512)
 
     class Meta:
         app_label = 'mooringlicensing'
@@ -4278,7 +4282,7 @@ class Mooring(RevisionedMixin):
 
 class MooringLogDocument(Document):
     log_entry = models.ForeignKey('MooringLogEntry',related_name='documents', on_delete=models.CASCADE)
-    _file = models.FileField(upload_to=update_mooring_comms_log_filename, max_length=512)
+    _file = models.FileField(storage=private_storage,upload_to=update_mooring_comms_log_filename, max_length=512)
 
     class Meta:
         app_label = 'mooringlicensing'
@@ -4469,7 +4473,7 @@ class Vessel(RevisionedMixin):
 
 class VesselLogDocument(Document):
     log_entry = models.ForeignKey('VesselLogEntry',related_name='documents', on_delete=models.CASCADE)
-    _file = models.FileField(upload_to=update_vessel_comms_log_filename, max_length=512)
+    _file = models.FileField(storage=private_storage,upload_to=update_vessel_comms_log_filename, max_length=512)
 
     class Meta:
         app_label = 'mooringlicensing'
@@ -4697,7 +4701,7 @@ class VesselOwnership(RevisionedMixin):
             if proposal == originated_proposal:
                 continue
             from mooringlicensing.components.approvals.models import Approval
-            if proposal.approval.status in [Approval.APPROVAL_STATUS_CURRENT, Approval.APPROVAL_STATUS_SUSPENDED,]:
+            if proposal.approval and proposal.approval.status in [Approval.APPROVAL_STATUS_CURRENT, Approval.APPROVAL_STATUS_SUSPENDED,]:
                 excludable = False
 
         return excludable
@@ -5245,10 +5249,12 @@ class ProposalRequirement(OrderedModel):
                     documents_qs.delete()
                 for idx in range(data['num_files']):
                     _file = request.data.get('file-'+str(idx))
-                    document = self.requirement_documents.create(_file=_file, name=_file.name)
-                    document.input_name = data['input_name']
-                    document.can_delete = True
-                    document.save()
+                    document = self.requirement_documents.create(
+                        _file=_file, 
+                        name=_file.name,
+                        input_name = data['input_name'],
+                        can_delete = True
+                    )
                 # end save documents
                 self.save()
             except:

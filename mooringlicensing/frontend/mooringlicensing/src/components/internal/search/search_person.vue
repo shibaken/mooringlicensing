@@ -49,7 +49,7 @@ from '@/utils/hooks'
             openDetailsApprovalsVessels: function() {
                 this.$nextTick(() => {
                     if (this.email_user) {
-                        window.location.replace("/internal/person/" + this.email_user.id);
+                        window.location.replace("/internal/person/" + this.email_user.ledger_id);
                     }
                 });
 

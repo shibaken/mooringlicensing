@@ -271,7 +271,10 @@ class ListComplianceSerializer(serializers.ModelSerializer):
             return obj.approval.child_obj.description
 
     def get_approval_submitter(self, obj):
-        return obj.approval.submitter_obj.get_full_name()
+        try:
+            return obj.approval.current_proposal.proposal_applicant.get_full_name()
+        except:
+            return obj.approval.current_proposal.submitter_obj.get_full_name()
 
     def get_assigned_to_name(self, obj):
         assigned_to = ''

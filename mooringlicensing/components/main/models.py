@@ -12,7 +12,12 @@ from django.dispatch import receiver
 from django.db.models.signals import post_save, post_delete
 from mooringlicensing import settings
 from mooringlicensing.ledger_api_utils import retrieve_email_userro
+from django.core.files.storage import FileSystemStorage
 
+private_storage = FileSystemStorage(  # We want to store files in secure place (outside of the media folder)
+    location=settings.PRIVATE_MEDIA_STORAGE_LOCATION,
+    base_url=settings.PRIVATE_MEDIA_BASE_URL,
+)
 
 class UserSystemSettings(models.Model):
     # user = models.OneToOneField(EmailUser, related_name='system_settings')
@@ -237,7 +242,7 @@ class TemporaryDocument(Document):
         related_name='documents',
         on_delete=models.CASCADE,
     )
-    _file = models.FileField(max_length=255)
+    _file = models.FileField(storage=private_storage,max_length=255)
 
     class Meta:
         app_label = 'mooringlicensing'

@@ -1,5 +1,6 @@
 import logging
 from confy import env
+from django.http import HttpResponse, Http404
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from django.views.generic import DetailView
@@ -8,14 +9,17 @@ from django.views.generic.base import TemplateView
 from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
 
 from mooringlicensing import settings
-from mooringlicensing.helpers import is_internal
+from mooringlicensing.helpers import is_internal, is_customer
 from mooringlicensing.forms import *
+from mooringlicensing.components.approvals.models import Approval, DcvAdmission, DcvPermit
 from mooringlicensing.components.proposals.models import (
         Proposal, 
         HelpPage
         )
 from mooringlicensing.components.compliances.models import Compliance
 from django.core.management import call_command
+import os
+import mimetypes
 
 
 logger = logging.getLogger(__name__)
@@ -159,8 +163,11 @@ class LoginSuccess(TemplateView):
         return response
 
 
-class ManagementCommandsView(LoginRequiredMixin, TemplateView):
+class ManagementCommandsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     template_name = 'mooringlicensing/mgt-commands.html'
+
+    def test_func(self):
+        return is_internal(self.request)
 
     def get(self, request, *args, **kwargs):
         debug = request.GET.get('debug', 'f')
@@ -184,3 +191,84 @@ class ManagementCommandsView(LoginRequiredMixin, TemplateView):
 
         return render(request, self.template_name, data)
 
+def is_authorised_to_access_proposal_document(request,document_id):
+    if is_internal(request):
+        return True
+    elif is_customer(request):
+        user = request.user
+        return Proposal.objects.filter(id=document_id).filter(submitter=user.id).exists()
+    
+def is_authorised_to_access_approval_document(request,document_id):
+    if is_internal(request):
+        return True
+    elif is_customer(request):
+        user = request.user
+        return Approval.objects.filter(id=document_id).filter(submitter=user.id).exists()
+    
+def is_authorised_to_access_dcv_admission_document(request,document_id):
+    if is_internal(request):
+        return True
+    elif is_customer(request):
+        user = request.user
+        return DcvAdmission.objects.filter(id=document_id).filter(submitter=user.id).exists()
+    
+def is_authorised_to_access_dcv_permit_document(request,document_id):
+    if is_internal(request):
+        return True
+    elif is_customer(request):
+        user = request.user
+        return DcvPermit.objects.filter(id=document_id).filter(submitter=user.id).exists()
+    
+def get_file_path_id(check_str,file_path):
+    file_name_path_split = file_path.split("/")
+    #if the check_str is in the file path, the next value should be the id
+    if check_str in file_name_path_split:
+        id_index = file_name_path_split.index(check_str)+1
+        if len(file_name_path_split) > id_index and file_name_path_split[id_index].isnumeric():
+            return int(file_name_path_split[id_index])
+        else:
+            return False
+    else:
+        return False
+
+def is_authorised_to_access_document(request):
+
+    if is_internal(request):
+        return True
+    elif is_customer(request):
+        p_document_id = get_file_path_id("proposals",request.path) or get_file_path_id("proposal",request.path)
+        if p_document_id:
+            return is_authorised_to_access_proposal_document(request,p_document_id)
+        a_document_id = get_file_path_id("approvals",request.path) or get_file_path_id("approval",request.path)
+        if a_document_id:
+            return is_authorised_to_access_approval_document(request,a_document_id)
+        da_document_id = get_file_path_id("dcv_admission",request.path)
+        if da_document_id:
+            return is_authorised_to_access_dcv_admission_document(request,da_document_id)
+        dp_document_id = get_file_path_id("dcv_permit",request.path)
+        if dp_document_id:
+            return is_authorised_to_access_dcv_permit_document(request,dp_document_id)
+        return False
+    else:
+        return False
+
+def getPrivateFile(request):
+
+    if is_authorised_to_access_document(request):
+        file_name_path =  request.path
+        #norm path will convert any traversal or repeat / in to its normalised form
+        full_file_path= os.path.normpath(settings.BASE_DIR+file_name_path) 
+        #we then ensure the normalised path is within the BASE_DIR (and the file exists)
+        if full_file_path.startswith(settings.BASE_DIR) and os.path.isfile(full_file_path):
+            extension = file_name_path.split(".")[-1]
+            the_file = open(full_file_path, 'rb')
+            the_data = the_file.read()
+            the_file.close()
+            if extension == 'msg':
+                return HttpResponse(the_data, content_type="application/vnd.ms-outlook")
+            if extension == 'eml':
+                return HttpResponse(the_data, content_type="application/vnd.ms-outlook")
+
+            return HttpResponse(the_data, content_type=mimetypes.types_map['.'+str(extension)])
+
+    return HttpResponse()

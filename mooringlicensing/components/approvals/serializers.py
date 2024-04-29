@@ -31,7 +31,8 @@ from mooringlicensing.components.organisations.models import (
 from mooringlicensing.components.main.serializers import CommunicationLogEntrySerializer, InvoiceSerializer, \
     EmailUserSerializer
 from mooringlicensing.components.proposals.serializers import InternalProposalSerializer, \
-    MooringSimpleSerializer  # EmailUserAppViewSerializer
+    MooringSimpleSerializer, \
+    ProposalApplicantSerializer  # EmailUserAppViewSerializer
 from mooringlicensing.components.users.serializers import UserSerializer
 from rest_framework import serializers
 from django.core.exceptions import ObjectDoesNotExist
@@ -431,18 +432,20 @@ class ApprovalSerializer(serializers.ModelSerializer):
                     )
             for moa in moa_set:
                 approval = moa.approval
-                authorised_users.append({
-                    "id": moa.id,
-                    "lodgement_number": approval.lodgement_number,
-                    "vessel_name": (
-                        approval.current_proposal.vessel_details.vessel.latest_vessel_details.vessel_name
-                        if approval.current_proposal and approval.current_proposal.vessel_details else ''
-                        ),
-                    "holder": approval.submitter_obj.get_full_name(),
-                    "mobile": approval.submitter_obj.mobile_number,
-                    "email": approval.submitter_obj.email,
-                    "status": approval.get_status_display(),
-                    })
+                if approval and approval.lodgement_number.startswith('AUP'):
+                    authorised_users.append({
+                        "id": moa.id,
+                        "lodgement_number": approval.lodgement_number,
+                        "vessel_name": (
+                            approval.current_proposal.vessel_details.vessel.latest_vessel_details.vessel_name
+                            if approval.current_proposal and approval.current_proposal.vessel_details else ''
+                            ),
+                        "holder": approval.current_proposal.proposal_applicant.get_full_name(),
+                        #"mobile": approval.current_proposal.proposal_applicant.mobile_number,
+                        "mobile": approval.current_proposal.proposal_applicant.mobile_number if approval.current_proposal.proposal_applicant.mobile_number else approval.current_proposal.proposal_applicant.phone_number,
+                        "email": approval.current_proposal.proposal_applicant.email,
+                        "status": approval.get_status_display(),
+                        })
         return authorised_users
 
 
@@ -477,9 +480,8 @@ class ApprovalSerializer(serializers.ModelSerializer):
         moorings = []
         if type(obj.child_obj) == AuthorisedUserPermit:
             for moa in obj.mooringonapproval_set.filter(end_date__isnull=True):
-                #import ipdb; ipdb.set_trace()
                 if moa.mooring.mooring_licence is not None:
-                    licence_holder_data = UserSerializer(moa.mooring.mooring_licence.submitter_obj).data
+                    licence_holder_data = ProposalApplicantSerializer(moa.mooring.mooring_licence.current_proposal.proposal_applicant).data
                     moorings.append({
                         "id": moa.id,
                         "mooring_name": moa.mooring.name,
@@ -1075,12 +1077,12 @@ class ListApprovalSerializer(serializers.ModelSerializer):
         if obj.submitter:
             items = []
             try:
-                from mooringlicensing.ledger_api_utils import retrieve_email_userro
+                #from mooringlicensing.ledger_api_utils import retrieve_email_userro
                 items.append(f'{obj.current_proposal.proposal_applicant.first_name} {obj.current_proposal.proposal_applicant.last_name}')
                 if obj.submitter_obj.mobile_number:
-                    items.append('<span class="glyphicon glyphicon-phone"></span> ' + obj.submitter_obj.mobile_number)
+                    items.append('<span class="glyphicon glyphicon-phone"></span> ' + obj.current_proposal.proposal_applicant.mobile_number)
                 if obj.submitter_obj.phone_number:
-                    items.append('<span class="glyphicon glyphicon-earphone"></span> ' + obj.submitter_obj.phone_number)
+                    items.append('<span class="glyphicon glyphicon-earphone"></span> ' + obj.current_proposal.proposal_applicant.phone_number)
                 items.append(obj.current_proposal.proposal_applicant.email)
             except Exception as e:
                 logger.error(e)

@@ -30,6 +30,7 @@ from django.core.cache import cache
 # from ledger.accounts.models import EmailUser,Address, Profile, EmailIdentity, EmailUserAction
 from ledger_api_client.ledger_models import EmailUserRO as EmailUser, Address
 from mooringlicensing.components.approvals.models import Approval
+from mooringlicensing.components.proposals.models import ProposalApplicant
 from django.core.paginator import Paginator, EmptyPage
 from mooringlicensing.components.main.decorators import basic_exception_handler
 # from ledger.address.models import Country
@@ -132,7 +133,7 @@ class GetPerson(views.APIView):
         items_per_page = 10
 
         if search_term:
-            my_queryset = EmailUser.objects.annotate(
+            my_queryset = ProposalApplicant.objects.annotate(
                 custom_term=Concat(
                     "first_name",
                     Value(" "),
@@ -141,7 +142,7 @@ class GetPerson(views.APIView):
                     "email",
                     output_field=CharField(),
                     )
-                ).filter(custom_term__icontains=search_term)
+                ).distinct("custom_term").order_by("custom_term").filter(custom_term__icontains=search_term)
             paginator = Paginator(my_queryset, items_per_page)
             try:
                 current_page = paginator.page(page_number)
@@ -150,16 +151,16 @@ class GetPerson(views.APIView):
                 my_objects = []
 
             data_transform = []
-            for email_user in my_objects:
-                if email_user.dob:
-                    text = '{} {} (DOB: {})'.format(email_user.first_name, email_user.last_name, email_user.dob)
+            for proposal_applicant in my_objects:
+                if proposal_applicant.dob:
+                    text = '{} {} (DOB: {})'.format(proposal_applicant.first_name, proposal_applicant.last_name, proposal_applicant.dob)
                 else:
-                    text = '{} {}'.format(email_user.first_name, email_user.last_name)
+                    text = '{} {}'.format(proposal_applicant.first_name, proposal_applicant.last_name)
 
-                serializer = EmailUserAppViewSerializer(email_user)
-                email_user_data = serializer.data
-                email_user_data['text'] = text
-                data_transform.append(email_user_data)
+                serializer = ProposalApplicantSerializer(proposal_applicant)
+                proposal_applicant_data = serializer.data
+                proposal_applicant_data['text'] = text
+                data_transform.append(proposal_applicant_data)
             return Response({
                 "results": data_transform,
                 "pagination": {
@@ -419,10 +420,10 @@ class UserViewSet(viewsets.ModelViewSet):
 
                 # for attachment in attachments:
                 for f in request.FILES:
-                    document = eu_entry.documents.create()
-                    document.name = str(request.FILES[f])
-                    document._file = request.FILES[f]
-                    document.save()
+                    document = eu_entry.documents.create(
+                    name = str(request.FILES[f]),
+                    _file = request.FILES[f]
+                    )
                 return Response({})
         except serializers.ValidationError:
             print(traceback.print_exc())

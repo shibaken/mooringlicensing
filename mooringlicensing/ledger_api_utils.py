@@ -13,7 +13,10 @@ logger = logging.getLogger(__name__)
 
 @basic_exception_handler
 def retrieve_email_userro(email_user_id):
-    return EmailUserRO.objects.get(id=email_user_id)
+    try:
+        return EmailUserRO.objects.get(id=email_user_id)
+    except Exception as e:
+        print(e)
 
 
 def get_invoice_payment_status(invoice_id):

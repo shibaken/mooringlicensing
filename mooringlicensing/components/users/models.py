@@ -3,8 +3,13 @@ from __future__ import unicode_literals
 from django.db import models
 
 from mooringlicensing import settings
+from django.core.files.storage import FileSystemStorage
 from mooringlicensing.components.main.models import CommunicationsLogEntry, Document
 
+private_storage = FileSystemStorage(  # We want to store files in secure place (outside of the media folder)
+    location=settings.PRIVATE_MEDIA_STORAGE_LOCATION,
+    base_url=settings.PRIVATE_MEDIA_BASE_URL,
+)
 
 class EmailUserLogEntry(CommunicationsLogEntry):
     # emailuser = models.ForeignKey(EmailUser, related_name='comms_logs')
@@ -37,7 +42,7 @@ def update_emailuser_comms_log_filename(instance, filename):
 
 class EmailUserLogDocument(Document):
     log_entry = models.ForeignKey('EmailUserLogEntry',related_name='documents', on_delete=models.CASCADE)
-    _file = models.FileField(upload_to=update_emailuser_comms_log_filename, max_length=512)
+    _file = models.FileField(storage=private_storage,upload_to=update_emailuser_comms_log_filename, max_length=512)
 
     class Meta:
         app_label = 'mooringlicensing'

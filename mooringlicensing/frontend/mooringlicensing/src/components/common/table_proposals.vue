@@ -19,7 +19,7 @@
                     </select>
                 </div>
             </div>
-            <div class="col-md-3" v-if="is_internal">
+            <!--<div class="col-md-3" v-if="is_internal">
                 <div class="form-group">
                     <label for="">Applicant</label>
                     <select class="form-control" v-model="filterApplicant">
@@ -27,7 +27,7 @@
                         <option v-for="applicant in applicants" :value="applicant.id">{{ applicant.first_name }} {{ applicant.last_name }}</option>
                     </select>
                 </div>
-            </div>
+            </div>-->
             <div class="col-md-3">
                 <div class="form-group">
                     <label for="">Status</label>
@@ -88,13 +88,13 @@ export default {
             filterApplicationType: null,
             filterApplicationCategory: null,
             filterApplicationStatus: null,
-            filterApplicant: null,
+            //filterApplicant: null,
 
             // filtering options
             application_types: [],
             application_categories: [],
             application_statuses: [],
-            applicants: [],
+            //applicants: [],
         }
     },
     components:{
@@ -118,10 +118,10 @@ export default {
             let vm = this;
             vm.$refs.application_datatable.vmDataTable.draw();  // This calls ajax() backend call.  This line is enough to search?  Do we need following lines...?
         },
-        filterApplicant: function(){
-            let vm = this;
-            vm.$refs.application_datatable.vmDataTable.draw();  // This calls ajax() backend call.  This line is enough to search?  Do we need following lines...?
-        }
+        //filterApplicant: function(){
+        //    let vm = this;
+        //    vm.$refs.application_datatable.vmDataTable.draw();  // This calls ajax() backend call.  This line is enough to search?  Do we need following lines...?
+        //}
     },
     computed: {
         debug: function(){
@@ -317,7 +317,7 @@ export default {
             return {
                 data: "id",
                 orderable: false,
-                searchable: true,
+                searchable: false, //special functionality for searching this field required
                 visible: true,
                 'render': function(row, type, full){
                     if (full.submitter){
@@ -435,7 +435,7 @@ export default {
                         d.filter_application_type = vm.filterApplicationType
                         d.filter_application_category = vm.filterApplicationCategory
                         d.filter_application_status = vm.filterApplicationStatus
-                        d.filter_applicant = vm.filterApplicant
+                        //d.filter_applicant = vm.filterApplicant
                         d.level = vm.level
                     }
                 },

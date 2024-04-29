@@ -1,6 +1,6 @@
 import logging
 
-from django.core.files.storage import default_storage
+#from django.core.files.storage import default_storage
 import os
 from django.core.files.base import ContentFile
 import traceback
@@ -240,7 +240,7 @@ def save_document(request, instance, comms_instance, document_type, input_name=N
 
         document = comms_instance.documents.get_or_create(
             name=filename)[0]
-        path = default_storage.save(
+        path = private_storage.save(
             '{}/{}/communications/{}/documents/{}'.format(
                 instance._meta.model_name, instance.id, comms_instance.id, filename), ContentFile(
                 _file.read()))
@@ -252,7 +252,7 @@ def save_document(request, instance, comms_instance, document_type, input_name=N
 
         document = instance.documents.get_or_create(
             name=filename)[0]
-        path = default_storage.save(
+        path = private_storage.save(
             '{}/{}/documents/{}'.format(
                 instance._meta.model_name, instance.id, filename), ContentFile(
                 _file.read()))
@@ -266,7 +266,7 @@ def save_document(request, instance, comms_instance, document_type, input_name=N
 def save_default_document_obj(instance, temp_document):
     document = instance.documents.get_or_create(
         name=temp_document.name)[0]
-    path = default_storage.save(
+    path = private_storage.save(
         '{}/{}/documents/{}'.format(
             instance._meta.model_name, 
             instance.id, 
@@ -282,7 +282,7 @@ def save_vessel_registration_document_obj(instance, temp_document):
     document = instance.vessel_registration_documents.get_or_create(
             input_name="vessel_registration_document",
             name=temp_document.name)[0]
-    path = default_storage.save(
+    path = private_storage.save(
         '{}/{}/documents/{}'.format(
             instance._meta.model_name, 
             instance.id, 

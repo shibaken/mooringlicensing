@@ -22,7 +22,7 @@ from django.db.models import Q
 
 from mooringlicensing.ledger_api_utils import retrieve_email_userro, get_invoice_payment_status
 # from ledger.settings_base import TIME_ZONE
-from mooringlicensing.settings import PROPOSAL_TYPE_SWAP_MOORINGS, TIME_ZONE, GROUP_DCV_PERMIT_ADMIN
+from mooringlicensing.settings import PROPOSAL_TYPE_SWAP_MOORINGS, TIME_ZONE, GROUP_DCV_PERMIT_ADMIN, PRIVATE_MEDIA_STORAGE_LOCATION, PRIVATE_MEDIA_BASE_URL
 # from ledger.accounts.models import EmailUser, RevisionedMixin
 # from ledger.payments.invoice.models import Invoice
 from ledger_api_client.ledger_models import EmailUserRO as EmailUser, Invoice, EmailUserRO
@@ -49,7 +49,12 @@ from mooringlicensing.components.approvals.email import (
 from mooringlicensing.helpers import is_customer
 from mooringlicensing.settings import PROPOSAL_TYPE_RENEWAL, PROPOSAL_TYPE_AMENDMENT, PROPOSAL_TYPE_NEW
 from ledger_api_client.utils import calculate_excl_gst
-from mooringlicensing.components.proposals.models import private_storage
+from django.core.files.storage import FileSystemStorage
+
+private_storage = FileSystemStorage(  # We want to store files in secure place (outside of the media folder)
+    location=PRIVATE_MEDIA_STORAGE_LOCATION,
+    base_url=PRIVATE_MEDIA_BASE_URL,
+)
 
 # logger = logging.getLogger('mooringlicensing')
 logger = logging.getLogger(__name__)
@@ -1231,8 +1236,8 @@ class WaitingListAllocation(Approval):
                 'issue_date': self.issue_date.strftime('%d/%m/%Y'),
                 # 'applicant_name': self.submitter.get_full_name(),
                 # 'applicant_full_name': self.submitter.get_full_name(),
-                'applicant_name': self.submitter_obj.get_full_name(),
-                'applicant_full_name': self.submitter_obj.get_full_name(),
+                'applicant_name': self.current_proposal.proposal_applicant.get_full_name(),
+                'applicant_full_name': self.current_proposal.proposal_applicant.get_full_name(),
                 'bay_name': self.current_proposal.preferred_bay.name,
                 'allocation_date': self.wla_queue_date.strftime('%d/%m/%Y'),
                 'position_number': self.wla_order,
@@ -1360,7 +1365,7 @@ class AnnualAdmissionPermit(Approval):
                 'approval': self,
                 'application': self.current_proposal,
                 'issue_date': self.issue_date.strftime('%d/%m/%Y'),
-                'applicant_name': retrieve_email_userro(self.submitter).get_full_name(),
+                'applicant_name': self.current_proposal.proposal_applicant.get_full_name(),
                 'p_address_line1': self.postal_address_line1,
                 'p_address_line2': self.postal_address_line2,
                 'p_address_suburb': self.postal_address_suburb,
@@ -1579,7 +1584,7 @@ class AuthorisedUserPermit(Approval):
                 'approval': self,
                 'application': self.current_proposal,
                 'issue_date': self.issue_date.strftime('%d/%m/%Y') if self.issue_date else '',
-                'applicant_name': self.submitter_obj.get_full_name(),
+                'applicant_name': self.current_proposal.proposal_applicant.get_full_name(),
                 'p_address_line1': self.postal_address_line1,
                 'p_address_line2': self.postal_address_line2,
                 'p_address_suburb': self.postal_address_suburb,
@@ -1992,7 +1997,7 @@ class MooringLicence(Approval):
                 authorised_by = aup.get_authorised_by()
                 authorised_by = authorised_by.upper().replace('_', ' ')
 
-                authorised_person['full_name'] = aup.submitter_obj.get_full_name()
+                authorised_person['full_name'] = aup.current_proposal.proposal_applicant.get_full_name()
                 authorised_person['vessel'] = {
                     'rego_no': aup.current_proposal.vessel_details.vessel.rego_no if aup.current_proposal.vessel_details else '',
                     'vessel_name': aup.current_proposal.vessel_details.vessel_name if aup.current_proposal.vessel_details else '',
@@ -2001,8 +2006,8 @@ class MooringLicence(Approval):
                 }
                 authorised_person['authorised_date'] = aup.issue_date.strftime('%d/%m/%Y')
                 authorised_person['authorised_by'] = authorised_by
-                authorised_person['mobile_number'] = aup.submitter_obj.mobile_number
-                authorised_person['email_address'] = aup.submitter_obj.email
+                authorised_person['mobile_number'] = aup.current_proposal.proposal_applicant.mobile_number
+                authorised_person['email_address'] = aup.current_proposal.proposal_applicant.email
                 authorised_persons.append(authorised_person)
 
         today = datetime.datetime.now(pytz.timezone(settings.TIME_ZONE)).date()
@@ -2052,7 +2057,7 @@ class MooringLicence(Approval):
                 'approval': self,
                 'application': self.current_proposal,
                 'issue_date': self.issue_date.strftime('%d/%m/%Y'),
-                'applicant_name': self.submitter_obj.get_full_name(),
+                'applicant_name': self.current_proposal.proposal_applicant.get_full_name(),
                 'p_address_line1': self.postal_address_line1,
                 'p_address_line2': self.postal_address_line2,
                 'p_address_suburb': self.postal_address_suburb,
@@ -2919,7 +2924,7 @@ class DcvPermit(RevisionedMixin):
             'vessel_name': self.dcv_vessel.vessel_name,
             'expiry_date': self.end_date.strftime('%d/%m/%Y'),
             'public_url': get_public_url(),
-            'submitter_fullname': self.submitter_obj.get_full_name(),
+            'submitter_fullname': self.submitter.get_full_name(),
         }
         return context
 
@@ -3366,8 +3371,10 @@ class StickerActionDetail(models.Model):
 
 @receiver(pre_delete, sender=Approval)
 def delete_documents(sender, instance, *args, **kwargs):
-    if hasattr(instance, 'documents'):
-        for document in instance.documents.all():
+    #if hasattr(instance, 'documents'):
+    #    for document in instance.documents.all():
+    if hasattr(instance, 'approval_documents'):
+        for document in instance.approval_documents.all():
             try:
                 document.delete()
             except:
@@ -3384,11 +3391,11 @@ reversion.register(VesselOwnershipOnApproval, follow=['approval', 'vessel_owners
 reversion.register(ApprovalHistory, follow=[])
 #reversion.register(Approval, follow=['proposal_set', 'ria_generated_proposal', 'waiting_list_offer_documents', 'renewal_documents', 'authorised_user_summary_documents', 'documents', 'mooringonapproval_set', 'vesselownershiponapproval_set', 'approvalhistory_set', 'replace', 'comms_logs', 'action_logs', 'stickers', 'compliances'])
 reversion.register(Approval)
-reversion.register(WaitingListAllocation, follow=['proposal_set', 'ria_generated_proposal', 'waiting_list_offer_documents', 'renewal_documents', 'authorised_user_summary_documents', 'documents', 'mooringonapproval_set', 'vesselownershiponapproval_set', 'approvalhistory_set', 'replace', 'comms_logs', 'action_logs', 'stickers', 'compliances'])
-reversion.register(AnnualAdmissionPermit, follow=['proposal_set', 'waiting_list_offer_documents', 'renewal_documents', 'authorised_user_summary_documents', 'documents', 'mooringonapproval_set', 'vesselownershiponapproval_set', 'approvalhistory_set', 'replace', 'comms_logs', 'action_logs', 'stickers', 'compliances'])
-reversion.register(AuthorisedUserPermit, follow=['proposal_set', 'waiting_list_offer_documents', 'renewal_documents', 'authorised_user_summary_documents', 'documents', 'mooringonapproval_set', 'vesselownershiponapproval_set', 'approvalhistory_set', 'replace', 'comms_logs', 'action_logs', 'stickers', 'compliances'])
-reversion.register(MooringLicence, follow=['proposal_set', 'waiting_list_offer_documents', 'renewal_documents', 'authorised_user_summary_documents', 'documents', 'mooringonapproval_set', 'vesselownershiponapproval_set', 'approvalhistory_set', 'replace', 'comms_logs', 'action_logs', 'stickers', 'compliances', 'mooring'])
-reversion.register(PreviewTempApproval, follow=['proposal_set', 'waiting_list_offer_documents', 'renewal_documents', 'authorised_user_summary_documents', 'documents', 'mooringonapproval_set', 'vesselownershiponapproval_set', 'approvalhistory_set', 'replace', 'comms_logs', 'action_logs', 'stickers', 'compliances'])
+reversion.register(WaitingListAllocation, follow=['proposal_set', 'ria_generated_proposal', 'waiting_list_offer_documents', 'renewal_documents', 'authorised_user_summary_documents', 'approval_documents', 'mooringonapproval_set', 'vesselownershiponapproval_set', 'approvalhistory_set', 'replace', 'comms_logs', 'action_logs', 'stickers', 'compliances'])
+reversion.register(AnnualAdmissionPermit, follow=['proposal_set', 'waiting_list_offer_documents', 'renewal_documents', 'authorised_user_summary_documents', 'approval_documents', 'mooringonapproval_set', 'vesselownershiponapproval_set', 'approvalhistory_set', 'replace', 'comms_logs', 'action_logs', 'stickers', 'compliances'])
+reversion.register(AuthorisedUserPermit, follow=['proposal_set', 'waiting_list_offer_documents', 'renewal_documents', 'authorised_user_summary_documents', 'approval_documents', 'mooringonapproval_set', 'vesselownershiponapproval_set', 'approvalhistory_set', 'replace', 'comms_logs', 'action_logs', 'stickers', 'compliances'])
+reversion.register(MooringLicence, follow=['proposal_set', 'waiting_list_offer_documents', 'renewal_documents', 'authorised_user_summary_documents', 'approval_documents', 'mooringonapproval_set', 'vesselownershiponapproval_set', 'approvalhistory_set', 'replace', 'comms_logs', 'action_logs', 'stickers', 'compliances', 'mooring'])
+reversion.register(PreviewTempApproval, follow=['proposal_set', 'waiting_list_offer_documents', 'renewal_documents', 'authorised_user_summary_documents', 'approval_documents', 'mooringonapproval_set', 'vesselownershiponapproval_set', 'approvalhistory_set', 'replace', 'comms_logs', 'action_logs', 'stickers', 'compliances'])
 reversion.register(ApprovalLogEntry, follow=['documents'])
 reversion.register(ApprovalLogDocument, follow=[])
 reversion.register(ApprovalUserAction, follow=[])

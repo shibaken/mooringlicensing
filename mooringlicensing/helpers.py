@@ -110,3 +110,24 @@ def is_authorised_to_modify(request, instance):
 
     # if not authorised:
     #     raise serializers.ValidationError('You are not authorised to modify this application.')
+
+def is_applicant_address_set(instance):
+
+    applicant = instance.proposal_applicant
+
+    #residential address
+    if not applicant.residential_line1 or \
+        not applicant.residential_locality or \
+        not applicant.residential_state or \
+        not applicant.residential_country or \
+        not applicant.residential_postcode:
+        raise serializers.ValidationError('Residential Address details not provided')
+
+    #postal same as residential OR postal address
+    if not applicant.postal_same_as_residential and \
+        (not applicant.postal_line1 or \
+        not applicant.postal_locality or \
+        not applicant.postal_state or \
+        not applicant.postal_country or \
+        not applicant.postal_postcode):
+        raise serializers.ValidationError('Postal Address details not provided')

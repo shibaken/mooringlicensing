@@ -108,8 +108,7 @@
                                           </div>
                                        </form>
                                 </div-->
-                        <div v-if="applicantType == 'SUB' && email_user.residential_address"
-                            class="panel-body panel-collapse collapse" :id="addressBody">
+                        <div class="panel-body panel-collapse collapse" :id="addressBody"> 
                             <form class="form-horizontal" action="index.html" method="post">
                                 <alert v-if="showAddressError" type="danger" style="color:red">
                                     <div v-for="item in errorListAddress"><strong>{{ item }}</strong></div>

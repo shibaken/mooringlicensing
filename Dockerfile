@@ -27,7 +27,7 @@ RUN apt-get update
 RUN apt-get upgrade -y
 RUN apt-get install --no-install-recommends -y curl wget git libmagic-dev gcc binutils libproj-dev gdal-bin python3 python3-setuptools python3-dev python3-pip tzdata cron rsyslog gunicorn
 RUN apt-get install --no-install-recommends -y libpq-dev patch libreoffice
-RUN apt-get install --no-install-recommends -y postgresql-client mtr htop vim npm sudo
+RUN apt-get install --no-install-recommends -y postgresql-client mtr htop vim nano npm sudo
 RUN apt-get install --no-install-recommends -y bzip2 unzip
 RUN ln -s /usr/bin/python3 /usr/bin/python 
 RUN apt remove -y libnode-dev
@@ -116,6 +116,9 @@ RUN chmod 777 /app/tmp/
 RUN mkdir /app/logs/.ipython
 RUN export IPYTHONDIR=/app/logs/.ipython/
 #RUN python profile create 
+RUN wget https://raw.githubusercontent.com/dbca-wa/wagov_utils/main/wagov_utils/bin/health_check.sh -O /bin/health_check.sh
+RUN chmod 755 /bin/health_check.sh
+
 EXPOSE 8080
 HEALTHCHECK --interval=1m --timeout=5s --start-period=10s --retries=3 CMD ["wget", "-q", "-O", "-", "http://localhost:8080/"]
 CMD ["/pre_startup.sh"]

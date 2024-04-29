@@ -27,8 +27,14 @@ from mooringlicensing.components.organisations.emails import (
                         send_organisation_request_link_email_notification,
 
             )
+from mooringlicensing import settings
+from django.core.files.storage import FileSystemStorage
 from django.contrib.postgres.fields import ArrayField
 
+private_storage = FileSystemStorage(  # We want to store files in secure place (outside of the media folder)
+    location=settings.PRIVATE_MEDIA_STORAGE_LOCATION,
+    base_url=settings.PRIVATE_MEDIA_BASE_URL,
+)
 
 # @python_2_unicode_compatible
 class Organisation(models.Model):
@@ -581,7 +587,7 @@ def update_organisation_comms_log_filename(instance, filename):
 
 class OrganisationLogDocument(Document):
     log_entry = models.ForeignKey('OrganisationLogEntry',related_name='documents', on_delete=models.CASCADE)
-    _file = models.FileField(upload_to=update_organisation_comms_log_filename, max_length=512)
+    _file = models.FileField(storage=private_storage,upload_to=update_organisation_comms_log_filename, max_length=512)
 
     class Meta:
         app_label = 'mooringlicensing'
@@ -616,7 +622,7 @@ class OrganisationRequest(models.Model):
     requester = models.IntegerField()  # EmailUserRO
     # assigned_officer = models.ForeignKey(EmailUser, blank=True, null=True, related_name='org_request_assignee')
     assigned_officer = models.IntegerField(null=True, blank=True)  # EmailUserRO
-    identification = models.FileField(upload_to='organisation/requests/%Y/%m/%d', max_length=512, null=True, blank=True)
+    identification = models.FileField(storage=private_storage,upload_to='organisation/requests/%Y/%m/%d', max_length=512, null=True, blank=True)
     status = models.CharField(max_length=100,choices=STATUS_CHOICES, default="with_assessor")
     lodgement_date = models.DateTimeField(auto_now_add=True)
     role = models.CharField(max_length=100,choices=ROLE_CHOICES, default="employee")
@@ -778,7 +784,7 @@ def update_organisation_request_comms_log_filename(instance, filename):
 
 class OrganisationRequestLogDocument(Document):
     log_entry = models.ForeignKey('OrganisationRequestLogEntry',related_name='documents', on_delete=models.CASCADE)
-    _file = models.FileField(upload_to=update_organisation_request_comms_log_filename, max_length=512)
+    _file = models.FileField(storage=private_storage,upload_to=update_organisation_request_comms_log_filename, max_length=512)
 
     class Meta:
         app_label = 'mooringlicensing'

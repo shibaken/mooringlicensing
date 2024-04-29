@@ -173,7 +173,10 @@ class EmailUserRoSerializer(serializers.ModelSerializer):
             'phone_number',
             'mobile_number',
         )
+        
 class ProposalApplicantSerializer(serializers.ModelSerializer):
+    full_name = serializers.SerializerMethodField()
+    ledger_id = serializers.SerializerMethodField()
 
     class Meta:
         model = ProposalApplicant
@@ -181,6 +184,7 @@ class ProposalApplicantSerializer(serializers.ModelSerializer):
             'id',
             'last_name',
             'first_name',
+            'full_name',
             'dob',
 
             'residential_line1',
@@ -203,7 +207,18 @@ class ProposalApplicantSerializer(serializers.ModelSerializer):
             'email',
             'phone_number',
             'mobile_number',
+
+            'ledger_id',
         )
+    
+    def get_full_name(self, obj):
+        return obj.get_full_name()
+
+    def get_ledger_id(self, obj):
+        try:
+            return obj.proposal.submitter
+        except:
+            return
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -213,6 +228,8 @@ class UserSerializer(serializers.ModelSerializer):
     address_details = serializers.SerializerMethodField()
     contact_details = serializers.SerializerMethodField()
     full_name = serializers.SerializerMethodField()
+    first_name = serializers.SerializerMethodField()
+    last_name = serializers.SerializerMethodField()
     is_department_user = serializers.SerializerMethodField()
     is_payment_admin = serializers.SerializerMethodField()
     system_settings= serializers.SerializerMethodField()
@@ -273,7 +290,8 @@ class UserSerializer(serializers.ModelSerializer):
         return True if obj.last_name  and obj.first_name else False
 
     def get_address_details(self,obj):
-        return True if obj.residential_address else False
+        #return True if obj.residential_address else False
+        return True
 
     def get_contact_details(self,obj):
         if obj.mobile_number and obj.email:
@@ -285,8 +303,35 @@ class UserSerializer(serializers.ModelSerializer):
         else:
             return False
 
+    def get_first_name(self, obj):
+        first_name = obj.first_name
+        if not first_name:
+            try:
+                return Proposal.objects.filter(submitter=obj.id).order_by("lodgement_date").last().proposal_applicant.first_name
+            except Exception as e:
+                print(e)
+                return first_name
+        return first_name
+    
+    def get_last_name(self, obj):
+        last_name = obj.last_name
+        if not last_name:
+            try:
+                return Proposal.objects.filter(submitter=obj.id).order_by("lodgement_date").last().proposal_applicant.last_name
+            except:
+                return last_name
+        return last_name
+
     def get_full_name(self, obj):
-        return obj.get_full_name()
+        first_name = obj.first_name
+        last_name = obj.last_name
+        full_name = obj.get_full_name()
+        if not first_name or not last_name:
+            try:
+                return Proposal.objects.filter(submitter=obj.id).order_by("lodgement_date").last().proposal_applicant.get_full_name()
+            except:
+                return full_name
+        return full_name
 
     def get_is_department_user(self, obj):
         # if obj.email:
